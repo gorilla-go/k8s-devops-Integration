@@ -183,15 +183,16 @@ metadata:
     nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
     {{- end }}
 spec:
-  host: {{ $appConfig.hostname }}
-  http:
-    paths:
-      - path: /
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: {{ $appName }}
-            port:
-              number: {{ $appConfig.listen }}
+  rules:
+    - host: {{ $appConfig.hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ $appName }}
+                port:
+                  number: {{ $appConfig.listen }}
 ---
 {{- end }}
