@@ -172,6 +172,7 @@ metadata:
   labels:
     com.yesglasses.ingress: {{ $appName }}
   annotations:
+    nginx.ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "FCGI"
     nginx.ingress.kubernetes.io/fastcgi-index: "index.php"
     nginx.ingress.kubernetes.io/fastcgi-params-configmap: "{{ $appName }}-nginx-params"
@@ -181,10 +182,7 @@ metadata:
     nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
     {{- end }}
 spec:
-  hostnames:
-  {{- range $_, $hostname := $appConfig.hostnames }}
-  - {{ $hostname }}
-  {{- end }}
+  host: {{ $appConfig.hostname }}
   rules:
   - matches:
     - path:
