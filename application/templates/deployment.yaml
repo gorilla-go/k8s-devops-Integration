@@ -41,7 +41,7 @@ spec:
       {{- if not (empty $appConfig.imagePullSecrets) }}
       imagePullSecrets:
         {{- range $index, $item := $appConfig.imagePullSecrets }}
-        - name: registry-{{ $item }}
+        - name: registry-{{ $item.name }}
         {{- end }}
       {{- end }}
       containers:
