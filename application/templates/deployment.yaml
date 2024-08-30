@@ -175,6 +175,7 @@ metadata:
     nginx.ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "FCGI"
     nginx.ingress.kubernetes.io/fastcgi-index: "index.php"
+    nginx.ingress.kubernetes.io/proxy-body-size: 32M
     nginx.ingress.kubernetes.io/fastcgi-params-configmap: "{{ $appName }}-nginx-params"
     {{- if $appConfig.basicAuth.enabled }}
     nginx.ingress.kubernetes.io/auth-type: basic
