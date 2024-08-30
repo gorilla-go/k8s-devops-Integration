@@ -38,15 +38,15 @@ spec:
       labels:
         com.yesglasses.pod: {{ $appName }}
     spec:
+      {{- if not (empty $appConfig.imagePullSecrets) }}
+      imagePullSecrets:
+        {{- range $index, $item := $appConfig.imagePullSecrets }}
+        - name: registry-{{ $item }}
+        {{- end }}
+      {{- end }}
       containers:
         - image: {{ $appConfig.image }}
           imagePullPolicy: {{ default "IfNotPresent" $appConfig.imagePullPolicy }}
-          {{- if not (empty $appConfig.imagePullSecrets) }}
-          imagePullSecrets:
-            {{- range $index, $item := $appConfig.imagePullSecrets }}
-            - name: registry-{{ $item }}
-            {{- end }}
-          {{- end }}
           name: php
           resources:
             requests:
