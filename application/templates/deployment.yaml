@@ -11,7 +11,7 @@ metadata:
   namespace: {{ $namespace }}
 type: kubernetes.io/dockerconfigjson
 data:
-  .dockerconfigjson: {{ $item | toJson | b64enc }}
+  .dockerconfigjson: {{ dict "auths" (dict "DOCKER_REGISTRY_SERVER" (dict "username" $item.username "password" $item.password "email" $item.email "auth" (nospace (cat $item.username ":" $item.password) | b64enc))) | toJson | b64enc }}
 ---
 {{ end -}}
 {{- end }}

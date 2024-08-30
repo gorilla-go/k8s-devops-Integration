@@ -48,10 +48,10 @@ app:
 registry:
   secrets:
     default:
-      docker-server: registry.bufio.cn
-      docker-email: admin@bufio.cn
-      docker-username: admin
-      docker-password: admin
+      server: registry.bufio.cn
+      email: admin@bufio.cn
+      username: admin
+      password: admin
 
 # mysql innodb cluster
 mysql:
