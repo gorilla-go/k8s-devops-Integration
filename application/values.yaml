@@ -1,82 +1,46 @@
 production_mode: local
 
 app:
-  example:
-    basicAuth:
-      enabled: false
-      username: "yes"
-      password: "glasses!"
-    replicas:
-        max: 2
-        min: 1
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 25%
-        maxSurge: 25%
-    containers:
-      nginx:
-        image: bukaka/nginx:1.21.1-alpine
-        imagePullPolicy: IfNotPresent
+  php:
+    example:
+      basicAuth:
+        enabled: false
+        username: "yes"
+        password: "glasses!"
+      replicas:
+          max: 2
+          min: 1
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 25%
+          maxSurge: 25%
+      image: registry.bufio.cn/php:latest
+      imagePullPolicy: IfNotPresent
+      resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+      scriptFile: /sites/index.php
+      mounts:
+      listen: 9000
+      health: /ping
+      monitor:
+        enabled: false
+        scrapeUri: tcp://127.0.0.1:9001/fpm_status
         resources:
           requests:
-            cpu: 50m
-            memory: 50Mi
+            cpu: 10m
+            memory: 16Mi
           limits:
-            cpu: 50m
-            memory: 100Mi
-        root: /sites/example/
-        phpEntryPoint: /index.php
-        listen: 80
-        hostnames:
-          - www.yes.local
-          - yes.local
-        extraConfig: ""
-        healthCheckPath: /healthz
-        mounts:
-          - name: sites
-            mountPath: /sites
-        monitor:
-          enabled: false
-          scrapeUri: http://127.0.0.1/nginx_status
-          resources:
-            requests:
-              cpu: 10m
-              memory: 16Mi
-            limits:
-              cpu: 20m
-              memory: 32Mi
+            cpu: 20m
+            memory: 32Mi
 
-      php:
-        image: bukaka/php-fpm:8.0.6
-        imagePullPolicy: IfNotPresent
-        resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 100m
-              memory: 128Mi
-        mounts:
-          - name: sites
-            mountPath: /sites
-        healthCheckPath: /ping
-        monitor:
-          enabled: false
-          scrapeUri: tcp://127.0.0.1:9001/fpm_status
-          resources:
-            requests:
-              cpu: 10m
-              memory: 16Mi
-            limits:
-              cpu: 20m
-              memory: 32Mi
-
-    restartPolicy: Always
-    volumes:
-      - name: sites
-        persistentVolumeClaim:
-          claimName: sites
+      restartPolicy: Always
+      volumes:
 
 
 # mysql innodb cluster
@@ -108,18 +72,16 @@ mysql:
   monitor:
     enabled: true
 
-routes: {}
-
 volumes:
-  - name: sites
-    storage: 10Gi
-    storageClassName: aws-efs
-    accessModes:
-      - ReadWriteOnce
-    hostPath:
-      path: /sites
-      type: Directory
-    mode: static
+  # - name: sites
+  #   storage: 10Gi
+  #   storageClassName: aws-efs
+  #   accessModes:
+  #     - ReadWriteOnce
+  #   hostPath:
+  #     path: /sites
+  #     type: Directory
+  #   mode: static
 
 cron:
   mysqlBackup:

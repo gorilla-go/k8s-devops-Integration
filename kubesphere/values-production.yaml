@@ -1,3 +1,5 @@
+production_mode: production
+
 storageClasses:
   - name: aws-ebs
     provisioner: ebs.csi.aws.com

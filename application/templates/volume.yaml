@@ -1,4 +1,5 @@
 {{ $namespace := .Release.Namespace }}
+{{- if not (empty .Values.volumes) }}
 {{- range $_, $volume := .Values.volumes }}
 {{- if eq $volume.mode "static" }}
 apiVersion: v1
@@ -47,4 +48,5 @@ spec:
   {{- end }}
 
 ---
+{{- end }}
 {{- end }}

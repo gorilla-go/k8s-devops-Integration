@@ -35,10 +35,3 @@ routes:
     backend:
       host: prometheus-operated
       port: 9090
-
-kube-prometheus-stack:
-  enabled: true
-
-cadvisor:
-  enabled: true
-
