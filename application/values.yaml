@@ -30,7 +30,7 @@ app:
       scriptFile: /sites/index.php
       mounts:
       listen: 9000
-      health: /ping
+      health:
       monitor:
         enabled: false
         scrapeUri: tcp://127.0.0.1:9001/fpm_status
