@@ -182,7 +182,7 @@ metadata:
     {{- end }}
 spec:
   hostnames:
-  {{- range $_, $hostname := $appConfig.containers.nginx.hostnames }}
+  {{- range $_, $hostname := $appConfig.hostnames }}
   - {{ $hostname }}
   {{- end }}
   rules:
