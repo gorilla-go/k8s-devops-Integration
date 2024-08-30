@@ -1,0 +1,83 @@
+{{- if .Values.mysql.enabled}}
+apiVersion: mysql.oracle.com/v2
+kind: InnoDBCluster
+metadata:
+  name: {{ .Values.mysql.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  version: {{ .Values.mysql.version }}
+  imagePullPolicy: IfNotPresent
+  baseServerId: 1000
+  datadirVolumeClaimTemplate:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: {{ default "20Gi" .Values.mysql.storage }}
+    storageClassName: aws-ebs
+  instances: {{ .Values.mysql.serverInstances | default 3 }}
+  metrics:
+    enable: {{ default false .Values.mysql.monitor.enabled }}
+    image: prom/mysqld-exporter:v0.13.0
+    monitor: {{ default false .Values.mysql.monitor.enabled }}
+    monitorSpec: {}
+  router:
+    instances: {{ .Values.mysql.routerInstances | default 2 }}
+  secretName: {{ .Values.mysql.rootSecretName }}
+  tlsUseSelfSigned: true
+  {{- if .Release.IsUpgrade }}
+  initDB:
+    clone:
+      donorUrl: "mysql-cluster-{{ .Values.mysql.cloneIndex }}.mysql-cluster-instances"
+      rootUser: root
+      secretKeyRef:
+        name: {{ .Values.mysql.rootSecretName }}
+  {{- end }}
+  podLabels:
+    com.yesglasses.pod: mysql
+  podSpec:
+    containers:
+      - name: mysql
+        resources:
+          requests:
+            memory: {{ .Values.mysql.resources.requests.memory }}
+            cpu: {{ .Values.mysql.resources.requests.cpu }}
+          limits:
+            memory: {{ .Values.mysql.resources.limits.memory }}
+            cpu: {{ .Values.mysql.resources.limits.cpu }}
+    affinity:
+      podAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm: 
+            labelSelector:
+              matchExpressions:
+                - key: com.yesglasses.pod
+                  operator: NotIn
+                  values:
+                    - mysql
+            topologyKey: kubernetes.io/hostname
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: node_type
+                  operator: In
+                  values:
+                    - db
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.mysql.rootSecretName }}
+  namespace: {{ .Release.Namespace }}
+stringData:
+  rootPassword: {{ .Values.mysql.credentials.root.password }}
+  rootMysqlConfig: |
+    [client]
+    user = root
+    password = {{ .Values.mysql.credentials.root.password }}
+
+{{- end }}

@@ -1,0 +1,16 @@
+{{ $namespace := .Release.Namespace }}
+
+{{- range $_, $storage := .Values.storageClasses }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $storage.name }}
+provisioner: {{ $storage.provisioner }}
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+reclaimPolicy: {{ default "Retain" $storage.reclaimPolicy }}
+parameters:
+  {{ toYaml $storage.parameters | nindent 2 }}
+
+---
+{{ end -}}

@@ -1,0 +1,356 @@
+{{ $namespace := .Release.Namespace }}
+{{ $logEnable := false }}
+{{ $productionMode := .Values.production_mode }}
+{{ $mysql := .Values.mysql }}
+{{- range $appName, $appConfig := .Values.app }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    com.yesglasses.deployment: {{ $appName }}
+  name: {{ $appName }}
+  namespace: {{ $namespace }}
+spec:
+  replicas: {{ default 1 $appConfig.replicas.min }}
+  selector:
+    matchLabels:
+      com.yesglasses.pod: {{ $appName }}
+  strategy:
+    type: {{ default "RollingUpdate" $appConfig.strategy.type }}
+    rollingUpdate:
+      maxUnavailable: {{ default "25%" $appConfig.strategy.maxUnavailable }}
+      maxSurge: {{ default "25%" $appConfig.strategy.maxSurge }}
+  template:
+    metadata:
+      labels:
+        com.yesglasses.pod: {{ $appName }}
+    spec:
+      containers:
+        - image: {{ $appConfig.containers.nginx.image }}
+          imagePullPolicy: {{ default "IfNotPresent" $appConfig.containers.nginx.imagePullPolicy }}
+          name: nginx
+          resources:
+            requests:
+              cpu: {{ default "100m" $appConfig.containers.nginx.resources.requests.cpu }}
+              memory: {{ default "128Mi" $appConfig.containers.nginx.resources.requests.memory }}
+            limits:
+              cpu: {{ default "200m" $appConfig.containers.nginx.resources.limits.cpu }}
+              memory: {{ default "256Mi" $appConfig.containers.nginx.resources.limits.memory }}
+          readinessProbe:
+            httpGet:
+              path: {{ $appConfig.containers.nginx.healthCheckPath }}
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: {{ $appConfig.containers.nginx.healthCheckPath }}
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+          volumeMounts:
+            - mountPath: /etc/nginx/templates
+              name: nginx-conf
+            {{- if not (empty $appConfig.containers.nginx.mounts) }}
+            {{ toYaml $appConfig.containers.nginx.mounts  | nindent 12 }}
+            {{- end }}
+            {{- if $appConfig.containers.nginx.logger.enabled }}
+            - name: local
+              mountPath: /var/log/nginx
+              subPath: log/nginx
+            {{- end }}
+            {{- if $appConfig.basicAuth.enabled }}
+            - name: basic-auth
+              mountPath: /etc/nginx/cert/auth
+              readOnly: true
+              subPath: nginx_passport
+            {{- end }}
+
+        - image: {{ $appConfig.containers.php.image }}
+          imagePullPolicy: {{ default "IfNotPresent" $appConfig.containers.php.imagePullPolicy }}
+          name: php
+          resources:
+            requests:
+              cpu: {{ default "100m" $appConfig.containers.php.resources.requests.cpu }}
+              memory: {{ default "128Mi" $appConfig.containers.php.resources.requests.memory }}
+            limits:
+              cpu: {{ default "200m" $appConfig.containers.php.resources.limits.cpu }}
+              memory: {{ default "256Mi" $appConfig.containers.php.resources.limits.memory }}
+          env:
+            - name: ENV_PRODUCTION
+              value: {{ default "local" $productionMode }}
+            {{- if and (not (empty $mysql)) $mysql.enabled }}
+            - name: MYSQL_HOST
+              value: {{ $mysql.name }}
+            - name: MYSQL_RW_PORT
+              value: "6446"
+            - name: MYSQL_RO_PORT
+              value: "6447"
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: {{ $appConfig.containers.php.healthCheckPath }}
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: {{ $appConfig.containers.php.healthCheckPath }}
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+          volumeMounts:
+            {{- if not (empty $appConfig.containers.php.mounts) }}
+            {{ default "" (toYaml $appConfig.containers.php.mounts) | nindent 12 }}
+            {{- end }}
+            {{- if $appConfig.containers.php.logger.enabled }}
+            - name: local
+              mountPath: /var/log/php_fpm
+              subPath: log/php_fpm
+            - name: local
+              mountPath: /var/log/php
+              subPath: log/php
+            {{- end }}
+        
+        {{- if or $appConfig.containers.php.logger.enabled $appConfig.containers.nginx.logger.enabled }}
+        - name: fluent-bit
+          image: fluent/fluent-bit:3.0
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 20m
+              memory: 64Mi
+          volumeMounts:
+            - name: local
+              mountPath: /var/log
+              subPath: log
+              readOnly: true
+            - mountPath: /fluent-bit/etc/
+              name: fluent-bit
+        {{- end }}
+
+        {{- if $appConfig.containers.php.monitor.enabled }}
+        - name: php-fpm-exporter
+          image: hipages/php-fpm_exporter:2.2
+          resources:
+            requests:
+              cpu: {{ default "10m" $appConfig.containers.php.monitor.resources.requests.cpu }}
+              memory: {{ default "32Mi" $appConfig.containers.php.monitor.resources.requests.memory }}
+            limits:
+              cpu: {{ default "20m" $appConfig.containers.php.monitor.resources.limits.cpu }}
+              memory: {{ default "64Mi" $appConfig.containers.php.monitor.resources.limits.memory }}
+          env:
+            - name: PHP_FPM_SCRAPE_URI
+              value: {{ default "tcp://127.0.0.1:9001/status" $appConfig.containers.php.monitor.scrapeUri }}
+            - name: PHP_FPM_FIX_PROCESS_COUNT
+              value: "1"
+        {{- end }}
+
+        {{- if $appConfig.containers.nginx.monitor.enabled }}
+        - name: nginx-exporter
+          image: nginx/nginx-prometheus-exporter:1.2.0
+          resources:
+            requests:
+              cpu: {{ default "10m" $appConfig.containers.nginx.monitor.resources.requests.cpu }}
+              memory: {{ default "32Mi" $appConfig.containers.nginx.monitor.resources.requests.memory }}
+            limits:
+              cpu: {{ default "20m" $appConfig.containers.nginx.monitor.resources.limits.cpu }}
+              memory: {{ default "64Mi" $appConfig.containers.nginx.monitor.resources.limits.memory }}
+          command: ["nginx-prometheus-exporter", "--nginx.scrape-uri={{ default "http://127.0.0.1/status" $appConfig.containers.nginx.monitor.scrapeUri }}"]
+        {{- end }}
+
+      restartPolicy: {{ $appConfig.restartPolicy }}
+      volumes:
+        {{- if not (empty $appConfig.volumes) }}
+        {{ toYaml $appConfig.volumes | nindent 8 }}
+        {{- end }}
+        - name: nginx-conf
+          configMap:
+            name: {{ $appName }}-nginx-config
+        {{- if or $appConfig.containers.php.logger.enabled $appConfig.containers.nginx.logger.enabled }}
+        - name: fluent-bit
+          configMap:
+            name: {{ $appName }}-fluent-bit
+        - name: local
+          emptyDir: {}
+        {{- end }}
+        {{- if $appConfig.basicAuth.enabled }}
+        - name: basic-auth
+          secret:
+            secretName: {{ $appName }}-basic-auth
+        {{- end }}
+
+---
+
+{{- if $appConfig.basicAuth.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $appName }}-basic-auth
+  namespace: {{ $namespace }}
+  labels:
+    com.yesglasses.secret: {{ $appName }}-basic-auth
+stringData:
+  nginx_passport: {{ htpasswd $appConfig.basicAuth.username  $appConfig.basicAuth.password }}
+{{- end }}
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $appName }}-nginx-config
+  namespace: {{ $namespace }}
+  labels:
+    com.yesglasses.configmap: {{ $appName }}-nginx-config
+data:
+    {{ $appName }}.conf.template: |
+      server {
+        listen {{ $appConfig.containers.nginx.listen }};
+        server_name {{ $appConfig.containers.nginx.hostnames | join " " }};
+
+        {{- if $appConfig.containers.nginx.logger.enabled }}
+        access_log /var/log/nginx/access.log main;
+        error_log /var/log/nginx/error.log warn;
+        {{- else }}
+        access_log /dev/stdout main;
+        error_log /dev/stderr warn;
+        {{- end }}
+
+        root {{ $appConfig.containers.nginx.root }};
+
+        {{- if or (eq $productionMode "production") (eq $productionMode "staging") }}
+        error_page 500 502 503 504 =503 /50x.html;
+        location = /50x.html {
+            internal;
+            if ($http_x_requested_with = "XMLHttpRequest") {
+              more_clear_headers Content-Type;
+              more_set_headers "Content-Type: application/json; charset=utf-8";
+              return 503 '{"code":503,"msg":"Service Unavailable"}';
+            }
+            root {{ $appConfig.containers.nginx.root }};
+            try_files $uri $uri/ =503;
+        }
+        {{- end }}
+        {{ default "" $appConfig.containers.nginx.extraConfig | nindent 8 }}
+        location / {
+          if (!-e $request_filename) {
+            rewrite ^ {{ $appConfig.containers.nginx.phpEntryPoint }} last;
+          }
+          index {{ last (splitList "/" $appConfig.containers.nginx.phpEntryPoint) }};
+        }
+
+        location ~ \.php$ {
+          {{- if $appConfig.basicAuth.enabled }}
+          auth_basic "Server require user and password";
+          auth_basic_user_file cert/auth;
+          {{- end }}
+
+          include fastcgi.conf;
+          fastcgi_pass localhost:9000;
+          {{- if or (eq $productionMode "production") (eq $productionMode "staging") }}
+          fastcgi_intercept_errors on;
+          {{- end }}
+        }
+      }
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $appName }}
+  namespace: {{ $namespace }}
+  labels:
+    com.yesglasses.service: {{ $appName }}
+spec:
+  ports:
+    - name: http
+      port: {{ $appConfig.containers.nginx.listen }}
+      targetPort: {{ $appConfig.containers.nginx.listen }}
+    {{- if $appConfig.containers.nginx.monitor.enabled }}
+    - name: nginx-exporter
+      port: 9113
+      targetPort: 9113
+    {{- end }}
+    {{- if $appConfig.containers.php.monitor.enabled }}
+    - name: php-exporter
+      port: 9253
+      targetPort: 9253
+    {{- end }}
+  selector:
+    com.yesglasses.pod: {{ $appName }}
+  type: ClusterIP
+
+---
+{{- if or $appConfig.containers.php.monitor.enabled $appConfig.containers.nginx.monitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $appName }}
+  namespace: {{ $namespace }}
+  labels:
+    com.yesglasses.monitor: {{ $appName }}
+spec:
+  jobLabel: {{ $appName }}
+  namespaceSelector:
+    matchNames:
+      - {{ $namespace }}
+  selector:
+    matchLabels:
+      com.yesglasses.service: {{ $appName }}
+  endpoints:
+    {{- if $appConfig.containers.php.monitor.enabled }}
+    - port: php-exporter
+    {{- end }}
+    {{- if $appConfig.containers.nginx.monitor.enabled }}
+    - port: nginx-exporter
+    {{- end }}
+{{- end }}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $appName }}
+  namespace: {{ $namespace }}
+  {{- if $appConfig.basicAuth.enabled  }}
+  annotations:
+    nginx.ingress.kubernetes.io/auth-secret: auth-secret
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+  {{- end }}
+spec:
+  parentRefs:
+  - name: {{ $namespace }}-gateway
+  hostnames:
+  {{- range $_, $hostname := $appConfig.containers.nginx.hostnames }}
+  - {{ $hostname }}
+  {{- end }}
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: {{ $appName }}
+      port: {{ $appConfig.containers.nginx.listen }}
+{{- end }}

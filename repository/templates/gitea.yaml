@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gitea
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: com.yesglasses.statefulset.gitea
+spec:
+  selector:
+    matchLabels:
+      app: com.yesglasses.pod.gitea
+  serviceName: gitea
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: com.yesglasses.pod.gitea
+    spec:
+      containers:
+      - name: gitea
+        image: gitea/gitea:1.22.1
+        resources:
+          limits:
+            memory: 256Mi
+            cpu: 100m
+        ports:
+        - containerPort: 3000
+          name: web
+        - containerPort: 22
+          name: ssh
+        volumeMounts:
+        - name: gitea-data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: gitea-data
+    spec:
+      storageClassName: aws-ebs
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitea
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: com.yesglasses.pod.gitea
+  ports:
+  - port: 3000
+    targetPort: 3000
+    name: http-web
+  - port: 22
+    targetPort: 22
+    name: tcp-ssh
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: git
+  namespace: {{ .Values.namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/service-upstream: 'true'
+spec:
+  rules:
+    - host: {{ .Values.git.host }}
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: gitea
+                port:
+                  number: 3000

@@ -1,0 +1,99 @@
+production_mode: production
+
+app:
+  example:
+    basicAuth:
+      enabled: false
+    containers:
+      nginx:
+        hostnames:
+          - yesglasses.bufio.cn
+        monitor:
+          enabled: true
+
+      php:
+        monitor:
+          enabled: true
+
+mysql:
+  enabled: false
+  credentials:
+    root:
+      password: "yesglasses!"
+
+  storage: 10Gi  # for update !
+
+cron:
+  mysqlBackup:
+    enabled: false
+
+routes: {}
+
+storageClasses:
+  - name: aws-ebs
+    provisioner: ebs.csi.aws.com
+    reclaimPolicy: Delete
+    parameters:
+      type: gp2
+  - name: aws-efs
+    provisioner: efs.csi.aws.com
+    reclaimPolicy: Retain
+  - name: aws-s3
+    provisioner: s3.csi.aws.com
+    reclaimPolicy: Retain
+
+volumes:
+  - name: sites
+    storage: 20Gi
+    storageClassName: aws-efs
+    accessModes:
+      - ReadWriteMany
+    csi:
+      driver: efs.csi.aws.com
+      volumeHandle: fs-0ff2cb66fc3be9457
+    mode: static
+
+  - name: log
+    storage: 1000Gi
+    storageClassName: aws-s3
+    accessModes:
+      - ReadWriteMany
+    csi:
+      driver: s3.csi.aws.com
+      volumeHandle: log
+      volumeAttributes:
+        bucketName: eks-s3-runtime-log
+    mode: static
+    mountOptions: 
+      - allow-other
+      - allow-delete
+      - allow-overwrite
+      - file-mode=0777
+      - dir-mode=0777
+
+  - name: mysql-backup
+    storage: 1000Gi
+    storageClassName: aws-s3
+    accessModes:
+      - ReadWriteMany
+    csi:
+      driver: s3.csi.aws.com
+      volumeHandle: mysql-backup
+      volumeAttributes:
+        bucketName: eks-s3-mysql-backup
+    mode: static
+    mountOptions: 
+      - allow-other
+      - allow-delete
+      - allow-overwrite
+      - file-mode=0777
+      - dir-mode=0777
+
+aws-load-balancer-controller:
+  enabled: true
+  region: ap-southeast-1
+  vpcId: vpc-0ec107694164a616b
+  clusterName: eks_test_yes
+
+fluentd:
+  enabled: false

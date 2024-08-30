@@ -1,0 +1,133 @@
+production_mode: local
+
+app:
+  example:
+    basicAuth:
+      enabled: false
+      username: "yes"
+      password: "glasses!"
+    replicas:
+        max: 2
+        min: 1
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 25%
+        maxSurge: 25%
+    containers:
+      nginx:
+        image: bukaka/nginx:1.21.1-alpine
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 50m
+            memory: 100Mi
+        root: /sites/example/
+        phpEntryPoint: /index.php
+        listen: 80
+        hostnames:
+          - www.yes.local
+          - yes.local
+        extraConfig: ""
+        healthCheckPath: /healthz
+        mounts:
+          - name: sites
+            mountPath: /sites
+        monitor:
+          enabled: false
+          scrapeUri: http://127.0.0.1/nginx_status
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 20m
+              memory: 32Mi
+
+      php:
+        image: bukaka/php-fpm:8.0.6
+        imagePullPolicy: IfNotPresent
+        resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+        mounts:
+          - name: sites
+            mountPath: /sites
+        healthCheckPath: /ping
+        monitor:
+          enabled: false
+          scrapeUri: tcp://127.0.0.1:9001/fpm_status
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 20m
+              memory: 32Mi
+
+    restartPolicy: Always
+    volumes:
+      - name: sites
+        persistentVolumeClaim:
+          claimName: sites
+
+
+# mysql innodb cluster
+mysql:
+  enabled: false
+  name: mysql-cluster
+  rootSecretName: mysql-secret
+  version: 8.4.1
+  credentials:
+    root:
+      user: root
+      password: root
+      host: "%"
+
+  serverInstances: 3
+  routerInstances: 2
+  backupIndex: 2
+  cloneIndex: 2
+  storage: 20Gi
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1024Mi
+    limits:
+      cpu: 2000m
+      memory: 4096Mi
+
+  monitor:
+    enabled: true
+
+routes: {}
+
+volumes:
+  - name: sites
+    storage: 10Gi
+    storageClassName: aws-efs
+    accessModes:
+      - ReadWriteOnce
+    hostPath:
+      path: /sites
+      type: Directory
+    mode: static
+
+cron:
+  mysqlBackup:
+    enabled: false
+
+mysql-operator:
+  envs:
+    k8sClusterDomain: cluster.local
+
+phpmyadmin:
+  fullnameOverride: phpmyadmin

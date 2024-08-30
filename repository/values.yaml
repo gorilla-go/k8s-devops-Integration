@@ -1,0 +1,10 @@
+namespace: repository-system
+
+git:
+  host: git.bufio.cn
+
+docker:
+  host: registry.bufio.cn
+  users:
+    - username: admin
+      password: admin

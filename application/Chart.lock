@@ -1,0 +1,9 @@
+dependencies:
+- name: phpmyadmin
+  repository: https://charts.bitnami.com/bitnami
+  version: 16.2.8
+- name: mysql-operator
+  repository: https://mysql.github.io/mysql-operator/
+  version: 2.1.4
+digest: sha256:ef71bb996f66c3369f59d50a3ee3b08be2fec8b8c217602483fcd9fd8e7e8df2
+generated: "2024-08-15T16:33:59.219486+08:00"
