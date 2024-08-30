@@ -18,6 +18,8 @@ app:
           maxSurge: 25%
       image: registry.bufio.cn/php:latest
       imagePullPolicy: IfNotPresent
+      imagePullSecrets:
+        - name: default
       resources:
           requests:
             cpu: 100m
@@ -43,6 +45,13 @@ app:
       restartPolicy: Always
       volumes:
 
+registry:
+  secrets:
+    default:
+      docker-server: registry.bufio.cn
+      docker-email: admin@bufio.cn
+      docker-username: admin
+      docker-password: admin
 
 # mysql innodb cluster
 mysql:

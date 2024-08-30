@@ -1,6 +1,20 @@
 {{ $namespace := .Release.Namespace }}
 {{ $productionMode := .Values.production_mode }}
 {{ $mysql := .Values.mysql }}
+
+{{- if not (empty .Values.registry.secrets) }}
+{{- range $name, $item := .Values.registry.secrets }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: registry-{{ $name }}
+  namespace: {{ $namespace }}
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: {{ $item | toJson | b64enc }}
+---
+{{ end -}}
+{{- end }}
 {{- range $appName, $appConfig := .Values.app.php }}
 apiVersion: apps/v1
 kind: Deployment
@@ -27,6 +41,12 @@ spec:
       containers:
         - image: {{ $appConfig.image }}
           imagePullPolicy: {{ default "IfNotPresent" $appConfig.imagePullPolicy }}
+          {{- if not (empty $appConfig.imagePullSecrets) }}
+          imagePullSecrets:
+            {{- range $index, $item := $appConfig.imagePullSecrets }}
+            - name: registry-{{ $item }}
+            {{- end }}
+          {{- end }}
           name: php
           resources:
             requests:
