@@ -107,8 +107,8 @@ metadata:
 spec:
   ports:
     - name: tcp-php
-      port: 9000
-      targetPort: 9000
+      port: {{ $appConfig.listen }}
+      targetPort: {{ $appConfig.listen }}
     {{- if $appConfig.monitor.enabled }}
     - name: http-exporter
       port: 9253
@@ -183,13 +183,14 @@ metadata:
     {{- end }}
 spec:
   host: {{ $appConfig.hostname }}
-  rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /
-    backendRefs:
-    - name: {{ $appName }}
-      port: {{ $appConfig.listen }}
+  http:
+    paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: {{ $appName }}
+            port:
+              number: {{ $appConfig.listen }}
 ---
 {{- end }}
