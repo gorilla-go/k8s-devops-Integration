@@ -216,14 +216,3 @@ spec:
                   number: {{ $appConfig.listen }}
 ---
 {{- end }}
-
-
-
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: test-map
-  namespace: {{ $namespace }}
-type: Opaque
-data:
-  test: MjIy
