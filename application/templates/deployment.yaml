@@ -24,7 +24,7 @@ metadata:
   name: {{ $appName }}
   namespace: {{ $namespace }}
 spec:
-  replicas: {{ default 1 $appConfig.replicas.min }}
+  replicas: {{ default 1 $appConfig.replicas }}
   selector:
     matchLabels:
       com.yesglasses.pod: {{ $appName }}
