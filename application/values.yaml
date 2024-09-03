@@ -5,7 +5,7 @@ app:
     example:
       hostname: www.bufio.cn
       basicAuth:
-        enabled: false
+        enabled: true
         username: "yes"
         password: "glasses!"
       replicas: 1
