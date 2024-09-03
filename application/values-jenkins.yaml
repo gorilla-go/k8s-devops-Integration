@@ -1,4 +1,4 @@
 app:
   php:
     example:
-      image: registry.bufio.cn/php:dev-1.0.8
+      image: registry.bufio.cn/php:dev-1.0.9
