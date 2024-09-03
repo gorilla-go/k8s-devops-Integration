@@ -5,6 +5,7 @@ git:
 
 docker:
   host: registry.bufio.cn
+  webUi: registry-ui.bufio.cn
   users:
     - username: admin
       password: admin

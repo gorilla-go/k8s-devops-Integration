@@ -67,6 +67,7 @@ metadata:
   namespace: {{ .Values.namespace }}
   annotations:
     nginx.ingress.kubernetes.io/service-upstream: 'true'
+    nginx.ingress.kubernetes.io/proxy-body-size: 32M
 spec:
   rules:
     - host: {{ .Values.git.host }}
