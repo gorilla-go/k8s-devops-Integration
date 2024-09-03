@@ -7,7 +7,7 @@ app:
       basicAuth:
         enabled: true
         username: "yes"
-        password: "glasses!"
+        password: "glasses!!"
       replicas: 1
       strategy:
         type: RollingUpdate
