@@ -224,5 +224,6 @@ kind: ConfigMap
 metadata:
   name: test-map
   namespace: {{ $namespace }}
+type: Opaque
 data:
-  test: 1
+  test: MjIy
