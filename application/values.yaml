@@ -9,8 +9,8 @@ app:
         username: "yes"
         password: "glasses!"
       replicas:
-          max: 2
-          min: 1
+          max: 3
+          min: 2
       strategy:
         type: RollingUpdate
         rollingUpdate:
