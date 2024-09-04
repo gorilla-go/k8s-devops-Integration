@@ -225,7 +225,7 @@ metadata:
 rules:
 - apiGroups: ["apps"]
   resources: ["deployments"]
-  verbs: ["update"]
+  verbs: ["get", "update"]
 
 ---
 apiVersion: v1
