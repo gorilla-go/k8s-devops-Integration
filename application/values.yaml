@@ -8,7 +8,7 @@ app:
         enabled: false
         username: "yes"
         password: "glasses!!"
-      replicas: 3
+      replicas: 1
       strategy:
         type: RollingUpdate
         rollingUpdate:
