@@ -3,7 +3,8 @@ production_mode: local
 app:
   php:
     example:
-      hostname: www.bufio.cn
+      hostnames: 
+        - "*.bufio.cn"
       basicAuth:
         enabled: true
         username: "yes"

@@ -204,7 +204,8 @@ metadata:
     {{- end }}
 spec:
   rules:
-    - host: {{ $appConfig.hostname }}
+    {{- range $i, $hostname := $appConfig.hostnames }}
+    - host: {{ $hostname }}
       http:
         paths:
           - path: /
@@ -214,6 +215,7 @@ spec:
                 name: {{ $appName }}
                 port:
                   number: {{ $appConfig.listen }}
+    {{ end -}}
 ---
 {{- end }}
 
