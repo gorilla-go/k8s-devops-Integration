@@ -205,7 +205,7 @@ metadata:
 spec:
   rules:
     {{- range $i, $hostname := $appConfig.hostnames }}
-    - host: {{ $hostname }}
+    - host: {{ $hostname | quote }}
       http:
         paths:
           - path: /
