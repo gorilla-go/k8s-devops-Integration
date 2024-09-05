@@ -88,10 +88,10 @@ spec:
             successThreshold: 1
             failureThreshold: 3
           {{- end }}
+          {{- if not (empty $appConfig.mounts) }}
           volumeMounts:
-            {{- if not (empty $appConfig.mounts) }}
             {{ default "" (toYaml $appConfig.mounts) | nindent 12 }}
-            {{- end }}
+          {{- end }}
 
         {{- if $appConfig.monitor.enabled }}
         - name: php-fpm-exporter
@@ -111,10 +111,10 @@ spec:
         {{- end }}
 
       restartPolicy: {{ $appConfig.restartPolicy }}
+      {{- if not (empty $appConfig.volumes) }}
       volumes:
-        {{- if not (empty $appConfig.volumes) }}
         {{ toYaml $appConfig.volumes | nindent 8 }}
-        {{- end }}
+      {{- end }}
 
 ---
 apiVersion: v1
@@ -215,7 +215,7 @@ spec:
                 name: {{ $appName }}
                 port:
                   number: {{ $appConfig.listen }}
-    {{ end -}}
+    {{- end }}
 ---
 {{- end }}
 
