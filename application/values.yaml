@@ -12,7 +12,7 @@ app:
       serverSnippet: |
         location /echo {
           content_by_lua_block {
-            ngx.say("Hello from the echo plugin!")
+            ngx.say("Hello from the echo plugin! $subdomain")
           }
         }
       replicas: 2
