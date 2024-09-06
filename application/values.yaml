@@ -3,7 +3,7 @@ production_mode: local
 app:
   php:
     example:
-      hostnames: 
+      hostnames:
         - "*.bufio.cn"
       basicAuth:
         enabled: true
@@ -45,13 +45,16 @@ app:
       restartPolicy: Always
       volumes:
 
-registry:
+dockerRegistry:
   secrets:
     default:
       server: registry.bufio.cn
       email: admin@bufio.cn
       username: admin
       password: admin
+
+gitRegistry:
+
 
 # mysql innodb cluster
 mysql:
