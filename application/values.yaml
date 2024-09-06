@@ -9,13 +9,8 @@ app:
         enabled: true
         username: "yes"
         password: "glasses!!"
-      serverSnippet: |
-        location /echo {
-          content_by_lua_block {
-            ngx.say("Hello from the echo plugin! $subdomain")
-          }
-        }
-      replicas: 2
+      serverSnippet:
+      replicas: 1
       strategy:
         type: RollingUpdate
         rollingUpdate:
@@ -32,7 +27,7 @@ app:
           limits:
             cpu: 200m
             memory: 256Mi
-      scriptFile: /sites/index.php
+      scriptFile: /sites/$subdomain/index.php
       mounts:
       listen: 9000
       health:
