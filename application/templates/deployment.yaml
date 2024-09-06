@@ -255,3 +255,13 @@ subjects:
 - kind: ServiceAccount
   name: jenkins-update-roler
   namespace: {{ $namespace }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jenkins-update-roler-secret
+  namespace: {{ $namespace }}
+  annotations:
+    kubernetes.io/service-account.name: jenkins-update-roler
+type: kubernetes.io/service-account-token
