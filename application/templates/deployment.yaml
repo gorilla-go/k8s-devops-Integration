@@ -167,7 +167,9 @@ metadata:
   labels:
     com.yesglasses.configmap: {{ $appName }}
 data:
+  {{- if not (empty $appConfig.scriptFile) }}
   SCRIPT_FILENAME: {{ $appConfig.scriptFile | quote }}
+  {{- end }}
 
 ---
 {{- if $appConfig.basicAuth.enabled }}
@@ -201,6 +203,9 @@ metadata:
     nginx.ingress.kubernetes.io/auth-type: basic
     nginx.ingress.kubernetes.io/auth-secret: {{ $appName }}-nginx-auth
     nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+    {{- end }}
+    {{- if not (empty $appConfig.serverSnippet) }}
+    nginx.ingress.kubernetes.io/server-snippet: {{ $appConfig.serverSnippet | nindent 6 }}
     {{- end }}
 spec:
   rules:

@@ -9,6 +9,12 @@ app:
         enabled: true
         username: "yes"
         password: "glasses!!"
+      serverSnippet: |
+        location /echo {
+          content_by_lua_block {
+            ngx.say("Hello from the echo plugin!")
+          }
+        }
       replicas: 2
       strategy:
         type: RollingUpdate
