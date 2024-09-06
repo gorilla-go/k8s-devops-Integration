@@ -2,12 +2,12 @@
 {{ $productionMode := .Values.production_mode }}
 {{ $mysql := .Values.mysql }}
 
-{{- if not (empty .Values.registry.secrets) }}
-{{- range $name, $item := .Values.registry.secrets }}
+{{- if not (empty .Values.dockerRegistry.secrets) }}
+{{- range $name, $item := .Values.dockerRegistry.secrets }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: registry-{{ $name }}
+  name: docker-registry-{{ $name }}
   namespace: {{ $namespace }}
 type: kubernetes.io/dockerconfigjson
 data:
@@ -41,7 +41,7 @@ spec:
       {{- if not (empty $appConfig.imagePullSecrets) }}
       imagePullSecrets:
         {{- range $index, $item := $appConfig.imagePullSecrets }}
-        - name: registry-{{ $item.name }}
+        - name: docker-registry-{{ $item.name }}
         {{- end }}
       {{- end }}
       containers:
