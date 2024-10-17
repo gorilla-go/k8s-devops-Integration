@@ -53,8 +53,6 @@ dockerRegistry:
       username: admin
       password: admin
 
-gitRegistry:
-
 
 # mysql innodb cluster
 mysql:
