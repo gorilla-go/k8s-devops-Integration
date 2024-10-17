@@ -1,0 +1,14 @@
+production_mode: production
+
+storageClasses:
+  - name: aws-ebs
+    provisioner: ebs.csi.aws.com
+    reclaimPolicy: Delete
+    parameters: 
+      type: gp2
+  - name: aws-efs
+    provisioner: efs.csi.aws.com
+    reclaimPolicy: Retain
+  - name: aws-s3
+    provisioner: s3.csi.aws.com
+    reclaimPolicy: Delete

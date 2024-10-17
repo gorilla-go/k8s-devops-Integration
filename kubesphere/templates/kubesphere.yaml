@@ -1,4 +1,3 @@
----
 apiVersion: installer.kubesphere.io/v1alpha1
 kind: ClusterConfiguration
 metadata:
@@ -35,7 +34,7 @@ spec:
       enableHA: false
       volumeSize: 2Gi # Redis PVC size.
     openldap:
-      enabled: false
+      enabled: true
       volumeSize: 2Gi   # openldap PVC size.
     minio:
       volumeSize: 20Gi # Minio PVC size.
@@ -68,14 +67,14 @@ spec:
       externalElasticsearchHost: ""
       externalElasticsearchPort: ""
     opensearch:   # Storage backend for logging, events and auditing.
-      # master:
-      #   volumeSize: 4Gi  # The volume size of Opensearch master nodes.
-      #   replicas: 1      # The total number of master nodes. Even numbers are not allowed.
-      #   resources: {}
-      # data:
-      #   volumeSize: 20Gi  # The volume size of Opensearch data nodes.
-      #   replicas: 1       # The total number of data nodes.
-      #   resources: {}
+      master:
+        volumeSize: 4Gi  # The volume size of Opensearch master nodes.
+        replicas: 1      # The total number of master nodes. Even numbers are not allowed.
+        resources: {}
+      data:
+        volumeSize: 20Gi  # The volume size of Opensearch data nodes.
+        replicas: 1       # The total number of data nodes.
+        resources: {}
       enabled: true
       logMaxAge: 7             # Log retention time in built-in Opensearch. It is 7 days by default.
       opensearchPrefix: whizard      # The string making up index names. The index name will be formatted as ks-<opensearchPrefix>-logging.
@@ -172,7 +171,7 @@ spec:
         base:
           enabled: true
         ingressGateways:
-        - enabled: true
+        - enabled: false
           name: istio-ingressgateway
         cni:
           enabled: false

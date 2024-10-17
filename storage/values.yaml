@@ -1,0 +1,14 @@
+production_mode: local
+
+storageClasses:
+  - name: aws-ebs
+    provisioner: k8s.io/minikube-hostpath
+    reclaimPolicy: Delete
+    parameters: 
+      type: gp2
+  - name: aws-efs
+    provisioner: k8s.io/minikube-hostpath
+    reclaimPolicy: Retain
+  - name: aws-s3
+    provisioner: k8s.io/minikube-hostpath
+    reclaimPolicy: Retain

@@ -4,19 +4,5 @@ adminPassword: "Yesglasses123"
 
 defaultStorageClass: aws-ebs
 
-storageClasses:
-  - name: aws-ebs
-    provisioner: k8s.io/minikube-hostpath
-    reclaimPolicy: Delete
-    parameters: 
-      type: gp2
-  - name: aws-efs
-    provisioner: k8s.io/minikube-hostpath
-    reclaimPolicy: Retain
-  - name: aws-s3
-    provisioner: k8s.io/minikube-hostpath
-    reclaimPolicy: Delete
-
-
 aws-load-balancer-controller:
   enabled: false
