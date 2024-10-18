@@ -4,7 +4,7 @@ app:
   php:
     example:
       hostnames:
-        - "www.bufio.cn"
+        - "*.bufio.cn"
       basicAuth:
         enabled: true
         username: "yes"
@@ -27,8 +27,10 @@ app:
           limits:
             cpu: 200m
             memory: 256Mi
-      scriptFile: /sites/index.php
+      scriptFile: /sites/$subdomain/index.php
       mounts:
+        - mountPath: /sites/
+          name: sites
       listen: 9000
       health:
       monitor:
@@ -44,6 +46,9 @@ app:
 
       restartPolicy: Always
       volumes:
+        - name: sites
+          persistentVolumeClaim:
+              claimName: sites
 
 dockerRegistry:
   secrets:
@@ -66,33 +71,22 @@ mysql:
       password: root
       host: "%"
 
-  serverInstances: 3
-  routerInstances: 2
-  backupIndex: 2
-  cloneIndex: 2
-  storage: 20Gi
+  serverInstances: 1
+  routerInstances: 1
+  backupIndex: 1
+  cloneIndex: 1
+  storage: 10Gi
 
   resources:
     requests:
       cpu: 500m
       memory: 1024Mi
     limits:
-      cpu: 2000m
+      cpu: 1000m
       memory: 4096Mi
 
   monitor:
     enabled: true
-
-volumes:
-  # - name: sites
-  #   storage: 10Gi
-  #   storageClassName: aws-efs
-  #   accessModes:
-  #     - ReadWriteOnce
-  #   hostPath:
-  #     path: /sites
-  #     type: Directory
-  #   mode: static
 
 cron:
   mysqlBackup:
