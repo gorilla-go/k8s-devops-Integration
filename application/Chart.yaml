@@ -25,11 +25,6 @@ appVersion: "1.0.0"
 
 dependencies:
   - condition: mysql.enabled
-    name: phpmyadmin
-    version: 16.2.8
-    repository: https://charts.bitnami.com/bitnami
-
-  - condition: mysql.enabled
     name: mysql-operator
     version: 2.1.4
     repository: https://mysql.github.io/mysql-operator/

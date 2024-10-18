@@ -61,7 +61,7 @@ dockerRegistry:
 
 # mysql innodb cluster
 mysql:
-  enabled: false
+  enabled: true
   name: mysql-cluster
   rootSecretName: mysql-secret
   version: 8.4.1
@@ -95,6 +95,3 @@ cron:
 mysql-operator:
   envs:
     k8sClusterDomain: cluster.local
-
-phpmyadmin:
-  fullnameOverride: phpmyadmin
