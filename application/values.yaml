@@ -4,7 +4,7 @@ app:
   php:
     example:
       hostnames:
-        - "*.bufio.cn"
+        - "*.local"
       basicAuth:
         enabled: true
         username: "yes"
