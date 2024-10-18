@@ -21,7 +21,7 @@ app:
       imagePullSecrets:
         - name: default
       resources:
-          requests:``
+          requests:
             cpu: 100m
             memory: 128Mi
           limits:
