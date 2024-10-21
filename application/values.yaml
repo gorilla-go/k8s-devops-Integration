@@ -6,11 +6,11 @@ app:
       hostnames:
         - "*.yes.io"
       basicAuth:
-        enabled: true
+        enabled: false
         username: "yes"
         password: "glasses!!"
       serverSnippet:
-      replicas: 1
+      replicas: 2
       strategy:
         type: RollingUpdate
         rollingUpdate:
