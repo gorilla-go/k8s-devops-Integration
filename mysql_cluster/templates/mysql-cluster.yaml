@@ -28,7 +28,7 @@ spec:
   {{- if .Release.IsUpgrade }}
   initDB:
     clone:
-      donorUrl: "mysql-cluster-{{ .Values.mysql.cloneIndex }}.mysql-cluster-instances"
+      donorUrl: "{{ .Values.mysql.name }}-{{ .Values.mysql.cloneIndex }}.{{ .Values.mysql.name }}-instances"
       rootUser: root
       secretKeyRef:
         name: {{ .Values.mysql.rootSecretName }}
