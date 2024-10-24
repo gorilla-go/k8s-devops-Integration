@@ -4,7 +4,7 @@ metadata:
   name: ks-installer
   namespace: kubesphere-system
   labels:
-    version: v3.4.1-patch.0
+    version: v3.4.1
 spec:
   persistence:
     storageClass: {{ .Values.defaultStorageClass | quote }}     # If there is no default StorageClass in your cluster, you need to specify an existing StorageClass here.
