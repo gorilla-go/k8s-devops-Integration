@@ -1,7 +1,7 @@
 {{ $namespace := .Release.Namespace }}
 {{- if not (empty .Values.volumes) }}
 {{- range $_, $volume := .Values.volumes }}
-{{- if eq $volume.mode "static" }}
+{{- if eq (default "dynamic" $volume.mode) "static" }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -34,7 +34,7 @@ metadata:
   labels:
     com.yesglasses.pvc: {{ $volume.name }}
   name: {{ $volume.name }}
-  namespace: {{ $namespace }}
+  namespace: {{ default .Release.Namespace $namespace }}
 spec:
   accessModes:
     {{ toYaml $volume.accessModes | nindent 4 }}

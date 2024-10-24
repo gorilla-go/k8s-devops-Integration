@@ -16,10 +16,9 @@ app:
         rollingUpdate:
           maxUnavailable: 25%
           maxSurge: 25%
-      image: registry.bufio.cn/php:latest
+      image: php:latest
       imagePullPolicy: IfNotPresent
       imagePullSecrets:
-        - name: default
       resources:
           requests:
             cpu: 100m
@@ -49,6 +48,13 @@ app:
         - name: sites
           persistentVolumeClaim:
               claimName: sites
+
+volumes:
+  - name: sites
+    accessModes:
+      - ReadWriteOnce
+    storage: 20Gi
+    storageClassName: aws-efs
 
 dockerRegistry:
   secrets:
