@@ -34,7 +34,7 @@ metadata:
   labels:
     com.yesglasses.pvc: {{ $volume.name }}
   name: {{ $volume.name }}
-  namespace: {{ default .Release.Namespace $namespace }}
+  namespace: {{ $namespace }}
 spec:
   accessModes:
     {{ toYaml $volume.accessModes | nindent 4 }}
