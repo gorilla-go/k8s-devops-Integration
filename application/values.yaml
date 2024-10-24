@@ -16,7 +16,7 @@ app:
         rollingUpdate:
           maxUnavailable: 25%
           maxSurge: 25%
-      image: php:latest
+      image: php:8.3-fpm
       imagePullPolicy: IfNotPresent
       imagePullSecrets:
       resources:
