@@ -31,7 +31,6 @@ app:
         - mountPath: /sites/
           name: sites
       listen: 9000
-      health:
       monitor:
         enabled: false
         scrapeUri: tcp://127.0.0.1:9001/fpm_status

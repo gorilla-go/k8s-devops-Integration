@@ -66,28 +66,22 @@ spec:
             - name: MYSQL_RO_PORT
               value: "6447"
             {{- end }}
-          {{- if not (empty $appConfig.health) }}
           readinessProbe:
-            httpGet:
-              path: {{ $appConfig.health }}
+            tcpSocket:
               port: {{ $appConfig.listen }}
-              scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 2
             successThreshold: 1
             failureThreshold: 3
           livenessProbe:
-            httpGet:
-              path: {{ $appConfig.health }}
+            tcpSocket:
               port: {{ $appConfig.listen }}
-              scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 2
             successThreshold: 1
             failureThreshold: 3
-          {{- end }}
           {{- if not (empty $appConfig.mounts) }}
           volumeMounts:
             {{ default "" (toYaml $appConfig.mounts) | nindent 12 }}
