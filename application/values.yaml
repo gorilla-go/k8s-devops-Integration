@@ -48,13 +48,6 @@ app:
           persistentVolumeClaim:
               claimName: sites
 
-volumes:
-  - name: sites
-    accessModes:
-      - ReadWriteOnce
-    storage: 20Gi
-    storageClassName: aws-efs
-
 dockerRegistry:
   secrets:
     default:
