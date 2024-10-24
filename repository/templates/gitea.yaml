@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: gitea
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace  }}
   labels:
     app: com.yesglasses.statefulset.gitea
 spec:
@@ -46,7 +46,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: gitea
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace  }}
 spec:
   selector:
     app: com.yesglasses.pod.gitea
@@ -64,7 +64,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: git
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace  }}
   annotations:
     nginx.ingress.kubernetes.io/service-upstream: 'true'
     nginx.ingress.kubernetes.io/proxy-body-size: 32M
