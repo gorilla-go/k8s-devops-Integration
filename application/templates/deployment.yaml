@@ -246,7 +246,6 @@ metadata:
     app.kubernetes.io/version: "{{ $version }}"
     app.kubernetes.io/name: "application-{{ $appName }}"
   annotations:
-    nginx.ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "FCGI"
     nginx.ingress.kubernetes.io/fastcgi-index: "index.php"
     nginx.ingress.kubernetes.io/proxy-body-size: 32M
