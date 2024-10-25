@@ -5,8 +5,10 @@ metadata:
 rules:
   - apiGroups:
       - ""
+      - "networking.k8s.io"
     resources:
       - namespaces
+      - ingressclasses
     verbs:
       - get
       - list
