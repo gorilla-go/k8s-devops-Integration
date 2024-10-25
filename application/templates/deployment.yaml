@@ -22,6 +22,9 @@ kind: Application
 metadata:
   name: application-{{ $appName }}
   namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/version: {{ $version }}
+    app.kubernetes.io/name: application-{{ $appName }}
   annotations:
     servicemesh.kubesphere.io/enabled: 'true'
 spec:
@@ -56,10 +59,13 @@ metadata:
   labels:
     com.yesglasses.deployment: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
+    app.kubernetes.io/version: {{ $version }}
+    app.kubernetes.io/name: application-{{ $appName }}
   name: {{ $appName }}
   namespace: {{ $namespace }}
   annotations:
-    servicemesh.kubesphere.io/enabled: 'true'
+    kubesphere.io/isElasticReplicas: "true"
+    servicemesh.kubesphere.io/enabled: "true"
 spec:
   replicas: {{ default 1 $appConfig.replicas }}
   selector:
@@ -75,6 +81,8 @@ spec:
       labels:
         com.yesglasses.pod: {{ $appName }}
         com.yesglasses.application: {{ $appName }}
+        app.kubernetes.io/version: {{ $version }}
+        app.kubernetes.io/name: application-{{ $appName }}
       annotations:
         sidecar.istio.io/inject: 'true'
     spec:
@@ -151,6 +159,8 @@ metadata:
   labels:
     com.yesglasses.service: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
+    app.kubernetes.io/version: {{ $version }}
+    app.kubernetes.io/name: application-{{ $appName }}
   annotations:
     servicemesh.kubesphere.io/enabled: 'true'
 spec:
@@ -177,6 +187,8 @@ metadata:
   labels:
     com.yesglasses.monitor: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
+    app.kubernetes.io/version: {{ $version }}
+    app.kubernetes.io/name: application-{{ $appName }}
 spec:
   jobLabel: {{ $appName }}
   namespaceSelector:
@@ -198,6 +210,8 @@ metadata:
   labels:
     com.yesglasses.configmap: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
+    app.kubernetes.io/version: {{ $version }}
+    app.kubernetes.io/name: application-{{ $appName }}
 data:
   {{- if not (empty $appConfig.scriptFile) }}
   SCRIPT_FILENAME: {{ $appConfig.scriptFile | quote }}
@@ -213,6 +227,8 @@ metadata:
   labels:
     com.yesglasses.secret: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
+    app.kubernetes.io/version: {{ $version }}
+    app.kubernetes.io/name: application-{{ $appName }}
 type: Opaque
 data:
   auth: {{ htpasswd $appConfig.basicAuth.username $appConfig.basicAuth.password | b64enc }}
@@ -227,6 +243,8 @@ metadata:
   labels:
     com.yesglasses.ingress: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
+    app.kubernetes.io/version: {{ $version }}
+    app.kubernetes.io/name: application-{{ $appName }}
   annotations:
     nginx.ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "FCGI"
