@@ -1,5 +1,6 @@
 {{ $namespace := .Release.Namespace }}
 {{ $productionMode := .Values.production_mode }}
+{{ $version := .Release.Revision }}
 
 {{- if not (empty .Values.dockerRegistry.secrets) }}
 {{- range $name, $item := .Values.dockerRegistry.secrets }}
@@ -39,7 +40,7 @@ spec:
       kind: Ingress
   descriptor:
     type: "application {{ $appName }}"
-    version: "{{ .Release.Revision }}"
+    version: "{{ $version }}"
     description: ""
   selector:
     matchLabels: 
@@ -106,7 +107,7 @@ spec:
                   failureThreshold: 3
                 {{- if not (empty $appConfig.mounts) }}
                 volumeMounts:
-                  {{ default "" (toYaml $appConfig.mounts) | nindent 12 }}
+                  {{ default "" (toYaml $appConfig.mounts) | nindent 18 }}
                 {{- end }}
 
               {{- if $appConfig.monitor.enabled }}
@@ -129,7 +130,7 @@ spec:
             restartPolicy: {{ $appConfig.restartPolicy }}
             {{- if not (empty $appConfig.volumes) }}
             volumes:
-              {{ toYaml $appConfig.volumes | nindent 8 }}
+              {{ toYaml $appConfig.volumes | nindent 14 }}
             {{- end }}
 
 
