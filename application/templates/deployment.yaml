@@ -1,6 +1,5 @@
 {{ $namespace := .Release.Namespace }}
 {{ $productionMode := .Values.production_mode }}
-{{ $mysql := .Values.mysql }}
 
 {{- if not (empty .Values.dockerRegistry.secrets) }}
 {{- range $name, $item := .Values.dockerRegistry.secrets }}
@@ -15,205 +14,224 @@ data:
 ---
 {{ end -}}
 {{- end }}
+
 {{- range $appName, $appConfig := .Values.app.php }}
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: app.k8s.io/v1
+kind: Application
 metadata:
-  labels:
-    com.yesglasses.deployment: {{ $appName }}
-  name: {{ $appName }}
+  name: application-{{ $appName }}
   namespace: {{ $namespace }}
-spec:
-  replicas: {{ default 1 $appConfig.replicas }}
-  selector:
-    matchLabels:
-      com.yesglasses.pod: {{ $appName }}
-  strategy:
-    type: {{ default "RollingUpdate" $appConfig.strategy.type }}
-    rollingUpdate:
-      maxUnavailable: {{ default "25%" $appConfig.strategy.maxUnavailable }}
-      maxSurge: {{ default "25%" $appConfig.strategy.maxSurge }}
-  template:
-    metadata:
-      labels:
-        com.yesglasses.pod: {{ $appName }}
-    spec:
-      {{- if not (empty $appConfig.imagePullSecrets) }}
-      imagePullSecrets:
-        {{- range $index, $item := $appConfig.imagePullSecrets }}
-        - name: docker-registry-{{ $item.name }}
-        {{- end }}
-      {{- end }}
-      containers:
-        - image: {{ $appConfig.image }}
-          imagePullPolicy: {{ default "IfNotPresent" $appConfig.imagePullPolicy }}
-          name: php
-          resources:
-            requests:
-              cpu: {{ default "100m" $appConfig.resources.requests.cpu }}
-              memory: {{ default "128Mi" $appConfig.resources.requests.memory }}
-            limits:
-              cpu: {{ default "200m" $appConfig.resources.limits.cpu }}
-              memory: {{ default "256Mi" $appConfig.resources.limits.memory }}
-          env:
-            - name: ENV_PRODUCTION
-              value: {{ default "local" $productionMode }}
-            {{- if and (not (empty $mysql)) $mysql.enabled }}
-            - name: MYSQL_HOST
-              value: {{ $mysql.name }}
-            - name: MYSQL_RW_PORT
-              value: "6446"
-            - name: MYSQL_RO_PORT
-              value: "6447"
-            {{- end }}
-          readinessProbe:
-            tcpSocket:
-              port: {{ $appConfig.listen }}
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 2
-            successThreshold: 1
-            failureThreshold: 3
-          livenessProbe:
-            tcpSocket:
-              port: {{ $appConfig.listen }}
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 2
-            successThreshold: 1
-            failureThreshold: 3
-          {{- if not (empty $appConfig.mounts) }}
-          volumeMounts:
-            {{ default "" (toYaml $appConfig.mounts) | nindent 12 }}
-          {{- end }}
-
-        {{- if $appConfig.monitor.enabled }}
-        - name: php-fpm-exporter
-          image: hipages/php-fpm_exporter:2.2
-          resources:
-            requests:
-              cpu: {{ default "10m" $appConfig.monitor.resources.requests.cpu }}
-              memory: {{ default "32Mi" $appConfig.monitor.resources.requests.memory }}
-            limits:
-              cpu: {{ default "20m" $appConfig.monitor.resources.limits.cpu }}
-              memory: {{ default "64Mi" $appConfig.monitor.resources.limits.memory }}
-          env:
-            - name: PHP_FPM_SCRAPE_URI
-              value: {{ default "tcp://127.0.0.1:9001/status" $appConfig.monitor.scrapeUri }}
-            - name: PHP_FPM_FIX_PROCESS_COUNT
-              value: "1"
-        {{- end }}
-
-      restartPolicy: {{ $appConfig.restartPolicy }}
-      {{- if not (empty $appConfig.volumes) }}
-      volumes:
-        {{ toYaml $appConfig.volumes | nindent 8 }}
-      {{- end }}
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ $appName }}
-  namespace: {{ $namespace }}
-  labels:
-    com.yesglasses.service: {{ $appName }}
-spec:
-  ports:
-    - name: tcp-php
-      port: {{ $appConfig.listen }}
-      targetPort: {{ $appConfig.listen }}
-    {{- if $appConfig.monitor.enabled }}
-    - name: http-exporter
-      port: 9253
-      targetPort: 9253
-    {{- end }}
-  selector:
-    com.yesglasses.pod: {{ $appName }}
-  type: ClusterIP
-
----
-{{- if $appConfig.monitor.enabled }}
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: {{ $appName }}
-  namespace: {{ $namespace }}
-  labels:
-    com.yesglasses.monitor: {{ $appName }}
-spec:
-  jobLabel: {{ $appName }}
-  namespaceSelector:
-    matchNames:
-      - {{ $namespace }}
-  selector:
-    matchLabels:
-      com.yesglasses.service: {{ $appName }}
-  endpoints:
-    - port: http-exporter
-{{- end }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ $appName }}-nginx-params
-  namespace: {{ $namespace }}
-  labels:
-    com.yesglasses.configmap: {{ $appName }}
-data:
-  {{- if not (empty $appConfig.scriptFile) }}
-  SCRIPT_FILENAME: {{ $appConfig.scriptFile | quote }}
-  {{- end }}
-
----
-{{- if $appConfig.basicAuth.enabled }}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ $appName }}-nginx-auth
-  namespace: {{ $namespace }}
-  labels:
-    com.yesglasses.secret: {{ $appName }}
-type: Opaque
-data:
-  auth: {{ htpasswd $appConfig.basicAuth.username $appConfig.basicAuth.password | b64enc }}
-{{- end }}
-
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ $appName }}
-  namespace: {{ $namespace }}
-  labels:
-    com.yesglasses.ingress: {{ $appName }}
   annotations:
-    nginx.ingress.kubernetes.io/service-upstream: "true"
-    nginx.ingress.kubernetes.io/backend-protocol: "FCGI"
-    nginx.ingress.kubernetes.io/fastcgi-index: "index.php"
-    nginx.ingress.kubernetes.io/proxy-body-size: 32M
-    nginx.ingress.kubernetes.io/fastcgi-params-configmap: "{{ $appName }}-nginx-params"
-    {{- if $appConfig.basicAuth.enabled }}
-    nginx.ingress.kubernetes.io/auth-type: basic
-    nginx.ingress.kubernetes.io/auth-secret: {{ $appName }}-nginx-auth
-    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
-    {{- end }}
-    {{- if not (empty $appConfig.serverSnippet) }}
-    nginx.ingress.kubernetes.io/server-snippet: {{ $appConfig.serverSnippet | nindent 6 }}
-    {{- end }}
+    kubesphere.io/servicemesh: true
 spec:
-  rules:
-    {{- range $i, $hostname := $appConfig.hostnames }}
-    - host: {{ $hostname | quote }}
-      http:
-        paths:
-          - path: /
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: {{ $appName }}
-                port:
-                  number: {{ $appConfig.listen }}
+  componentKinds:
+    - group: apps
+      kind: Deployment
+    - group: core
+      kind: Service
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+    - group: core
+      kind: ConfigMap
+    - group: core
+      kind: Secret
+    - group: networking.k8s.io
+      kind: Ingress
+  descriptor:
+    type: "application {{ $appName }}"
+    version: "{{ .Release.Revision }}"
+    description: ""
+  selector:
+    matchLabels: 
+      com.yesglasses.application: {{ $appName }}
+  addOwnerRef: true
+  components:
+    - apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        labels:
+          com.yesglasses.deployment: {{ $appName }}
+        name: {{ $appName }}
+        namespace: {{ $namespace }}
+      spec:
+        replicas: {{ default 1 $appConfig.replicas }}
+        selector:
+          matchLabels:
+            com.yesglasses.pod: {{ $appName }}
+        strategy:
+          type: {{ default "RollingUpdate" $appConfig.strategy.type }}
+          rollingUpdate:
+            maxUnavailable: {{ default "25%" $appConfig.strategy.maxUnavailable }}
+            maxSurge: {{ default "25%" $appConfig.strategy.maxSurge }}
+        template:
+          metadata:
+            labels:
+              com.yesglasses.pod: {{ $appName }}
+          spec:
+            {{- if not (empty $appConfig.imagePullSecrets) }}
+            imagePullSecrets:
+              {{- range $index, $item := $appConfig.imagePullSecrets }}
+              - name: docker-registry-{{ $item.name }}
+              {{- end }}
+            {{- end }}
+            containers:
+              - image: {{ $appConfig.image }}
+                imagePullPolicy: {{ default "IfNotPresent" $appConfig.imagePullPolicy }}
+                name: php
+                resources:
+                  requests:
+                    cpu: {{ default "100m" $appConfig.resources.requests.cpu }}
+                    memory: {{ default "128Mi" $appConfig.resources.requests.memory }}
+                  limits:
+                    cpu: {{ default "200m" $appConfig.resources.limits.cpu }}
+                    memory: {{ default "256Mi" $appConfig.resources.limits.memory }}
+                env:
+                  - name: ENV_PRODUCTION
+                    value: {{ default "local" $productionMode }}
+                readinessProbe:
+                  tcpSocket:
+                    port: {{ $appConfig.listen }}
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  timeoutSeconds: 2
+                  successThreshold: 1
+                  failureThreshold: 3
+                livenessProbe:
+                  tcpSocket:
+                    port: {{ $appConfig.listen }}
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  timeoutSeconds: 2
+                  successThreshold: 1
+                  failureThreshold: 3
+                {{- if not (empty $appConfig.mounts) }}
+                volumeMounts:
+                  {{ default "" (toYaml $appConfig.mounts) | nindent 12 }}
+                {{- end }}
+
+              {{- if $appConfig.monitor.enabled }}
+              - name: php-fpm-exporter
+                image: hipages/php-fpm_exporter:2.2
+                resources:
+                  requests:
+                    cpu: {{ default "10m" $appConfig.monitor.resources.requests.cpu }}
+                    memory: {{ default "32Mi" $appConfig.monitor.resources.requests.memory }}
+                  limits:
+                    cpu: {{ default "20m" $appConfig.monitor.resources.limits.cpu }}
+                    memory: {{ default "64Mi" $appConfig.monitor.resources.limits.memory }}
+                env:
+                  - name: PHP_FPM_SCRAPE_URI
+                    value: {{ default "tcp://127.0.0.1:9001/status" $appConfig.monitor.scrapeUri }}
+                  - name: PHP_FPM_FIX_PROCESS_COUNT
+                    value: "1"
+              {{- end }}
+
+            restartPolicy: {{ $appConfig.restartPolicy }}
+            {{- if not (empty $appConfig.volumes) }}
+            volumes:
+              {{ toYaml $appConfig.volumes | nindent 8 }}
+            {{- end }}
+
+
+    - apiVersion: v1
+      kind: Service
+      metadata:
+        name: {{ $appName }}
+        namespace: {{ $namespace }}
+        labels:
+          com.yesglasses.service: {{ $appName }}
+      spec:
+        ports:
+          - name: tcp-php
+            port: {{ $appConfig.listen }}
+            targetPort: {{ $appConfig.listen }}
+          {{- if $appConfig.monitor.enabled }}
+          - name: http-exporter
+            port: 9253
+            targetPort: 9253
+          {{- end }}
+        selector:
+          com.yesglasses.pod: {{ $appName }}
+        type: ClusterIP
+
+    {{- if $appConfig.monitor.enabled }}
+    - apiVersion: monitoring.coreos.com/v1
+      kind: ServiceMonitor
+      metadata:
+        name: {{ $appName }}
+        namespace: {{ $namespace }}
+        labels:
+          com.yesglasses.monitor: {{ $appName }}
+      spec:
+        jobLabel: {{ $appName }}
+        namespaceSelector:
+          matchNames:
+            - {{ $namespace }}
+        selector:
+          matchLabels:
+            com.yesglasses.service: {{ $appName }}
+        endpoints:
+          - port: http-exporter
     {{- end }}
----
+
+    - apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: {{ $appName }}-nginx-params
+        namespace: {{ $namespace }}
+        labels:
+          com.yesglasses.configmap: {{ $appName }}
+      data:
+        {{- if not (empty $appConfig.scriptFile) }}
+        SCRIPT_FILENAME: {{ $appConfig.scriptFile | quote }}
+        {{- end }}
+
+    {{- if $appConfig.basicAuth.enabled }}
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: {{ $appName }}-nginx-auth
+        namespace: {{ $namespace }}
+        labels:
+          com.yesglasses.secret: {{ $appName }}
+      type: Opaque
+      data:
+        auth: {{ htpasswd $appConfig.basicAuth.username $appConfig.basicAuth.password | b64enc }}
+    {{- end }}
+
+    - apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: {{ $appName }}
+        namespace: {{ $namespace }}
+        labels:
+          com.yesglasses.ingress: {{ $appName }}
+        annotations:
+          nginx.ingress.kubernetes.io/service-upstream: "true"
+          nginx.ingress.kubernetes.io/backend-protocol: "FCGI"
+          nginx.ingress.kubernetes.io/fastcgi-index: "index.php"
+          nginx.ingress.kubernetes.io/proxy-body-size: 32M
+          nginx.ingress.kubernetes.io/fastcgi-params-configmap: "{{ $appName }}-nginx-params"
+          {{- if $appConfig.basicAuth.enabled }}
+          nginx.ingress.kubernetes.io/auth-type: basic
+          nginx.ingress.kubernetes.io/auth-secret: {{ $appName }}-nginx-auth
+          nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+          {{- end }}
+          {{- if not (empty $appConfig.serverSnippet) }}
+          nginx.ingress.kubernetes.io/server-snippet: {{ $appConfig.serverSnippet | nindent 6 }}
+          {{- end }}
+      spec:
+        rules:
+          {{- range $i, $hostname := $appConfig.hostnames }}
+          - host: {{ $hostname | quote }}
+            http:
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: {{ $appName }}
+                      port:
+                        number: {{ $appConfig.listen }}
+          {{- end }}
 {{- end }}
