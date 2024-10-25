@@ -75,6 +75,8 @@ spec:
       labels:
         com.yesglasses.pod: {{ $appName }}
         com.yesglasses.application: {{ $appName }}
+      annotations:
+        sidecar.istio.io/inject: 'true'
     spec:
       {{- if not (empty $appConfig.imagePullSecrets) }}
       imagePullSecrets:
