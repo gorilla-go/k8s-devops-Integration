@@ -10,7 +10,7 @@ app:
         username: "yes"
         password: "glasses!!"
       serverSnippet:
-      replicas: 2
+      replicas: 1
       strategy:
         type: RollingUpdate
         rollingUpdate:
