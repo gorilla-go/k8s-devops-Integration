@@ -259,6 +259,7 @@ metadata:
     nginx.ingress.kubernetes.io/server-snippet: {{ $appConfig.serverSnippet | nindent 6 }}
     {{- end }}
 spec:
+  ingressClassName: kubesphere-router-cluster
   rules:
     {{- range $i, $hostname := $appConfig.hostnames }}
     - host: {{ $hostname | quote }}
