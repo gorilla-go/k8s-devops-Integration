@@ -1,0 +1,39 @@
+{{- if eq .Values.pvc.mode "static" -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.pvc.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    com.yesglasses.pv: {{ .Values.pvc.name }}
+spec:
+  capacity:
+    storage: {{ .Values.pvc.capacity }}
+  accessModes:
+    - {{ .Values.pvc.accessMode }}
+  storageClassName: {{ .Values.pvc.storageClassName }}
+  volumeMode: Filesystem
+  {{- if not (empty .Values.pvc.csi) }}
+  csi:
+    {{ toYaml .Values.pvc.csi | nindent 4 }}
+  {{- end }}
+---
+
+{{- end -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.pvc.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    com.yesglasses.pvc: {{ .Values.pvc.name }}
+spec:
+  {{- if eq .Values.pvc.mode "static" }}
+  volumeName: {{ .Values.pvc.name }}
+  {{- end }}
+  storageClassName: {{ .Values.pvc.storageClassName }}
+  accessModes:
+    - {{ .Values.pvc.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.pvc.capacity }}

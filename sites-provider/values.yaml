@@ -1,0 +1,35 @@
+pvc:
+  name: sites-provider
+  storageClassName: aws-efs
+  accessMode: ReadWriteOnce
+  capacity: 10Gi
+  mode: dynamic
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: fs-12345678
+
+webhook:
+  name: webhook
+  image: bukaka/webhook:1.0.0
+  restartPolicy: Always
+  resources:
+    limits:
+      cpu: 20m
+      memory: 50Mi
+    requests:
+      cpu: 10m
+      memory: 20Mi
+  sitesMountPath: /sites/
+  # scripts mount path: /var/scripts/
+  scripts:
+    pull-repo.sh: |
+      #!/bin/sh
+      # pull or update git repository.
+
+  # hooks.json mount path: /var/webhook/hooks.json
+  hooks:
+    - id: pull-repo
+      execute-command: "sh"
+      pass-arguments-to-command:
+        - source: string
+          name: "/var/scripts/pull-repo.sh"

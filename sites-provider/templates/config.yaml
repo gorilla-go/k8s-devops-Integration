@@ -1,0 +1,26 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Values.webhook.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    com.yesglasses.configmap: {{ .Values.webhook.name }}
+data:
+  hooks.json: |-
+    {{ toYaml .Values.webhook.hooks | nindent 4 }}
+
+--- 
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Values.webhook.name }}-scripts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    com.yesglasses.configmap: {{ .Values.webhook.name }}-scripts
+data:
+  {{- if not (empty .Values.webhook.scripts) }}
+  {{- range $scriptName, $scriptContent := .Values.webhook.scripts }}
+  {{ $scriptName }}: |-
+    {{ $scriptContent | nindent 4 }}
+  {{ end -}}
+  {{- end }}

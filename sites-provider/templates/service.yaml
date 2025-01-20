@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.webhook.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    com.yesglasses.service: {{ .Values.webhook.name }}
+spec:
+  selector:
+    com.yesglasses.pod: sites-webhook
+  type: ClusterIP
+  ports:
+    - name: http-{{ .Values.webhook.name }}
+      protocol: TCP
+      port: 80
+      targetPort: 9000

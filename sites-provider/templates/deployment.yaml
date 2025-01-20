@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sites-webhook
+  namespace: {{ .Release.Namespace }}
+  labels:
+    com.yesglasses.deployment: sites-webhook
+spec:
+  selector:
+    matchLabels:
+      com.yesglasses.pod: sites-webhook
+  replicas: 1 # do not scale !
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        com.yesglasses.pod: sites-webhook
+    spec:
+      restartPolicy: {{ default "Always" .Values.webhook.restartPolicy }}
+      containers:
+      - name: sites-webhook
+        image: {{ .Values.webhook.image }}
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        resources:
+          limits:
+            cpu: {{ default "20m" .Values.webhook.resources.limits.cpu }}
+            memory: {{  default "50Mi" .Values.webhook.resources.limits.memory }}
+          requests:
+            cpu: {{ default "10m" .Values.webhook.resources.requests.cpu }}
+            memory: {{ default "20Mi" .Values.webhook.resources.requests.memory }}
+        command:
+          - "sh"
+          - "-c"
+          - |
+            webhook -hooks /etc/webhook/hooks.json -verbose
+        volumeMounts:
+        - name: {{ .Values.pvc.name }}
+          mountPath: {{ .Values.webhook.sitesMountPath }}
+        - name: scripts
+          mountPath: /var/scripts/
+        - name: hooks-cm
+          mountPath: /etc/webhook/
+      volumes:
+        - name: {{ .Values.pvc.name }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.pvc.name }}
+        - name: scripts
+          configMap:
+            name: {{ .Values.webhook.name }}-scripts
+        - name: hooks-cm
+          configMap:
+            name: {{ .Values.webhook.name }}
+      

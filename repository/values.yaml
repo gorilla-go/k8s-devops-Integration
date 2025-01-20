@@ -1,11 +1,31 @@
-namespace: repository-system
-
+# gitea config.
 git:
+  # enable ingress
+  ingress: true
+  # gitea host name
   host: git.bufio.cn
+  # gitea data volume capacity
+  capacity: 10Gi
+  # gitea data volume storage class name
+  storageClassName: aws-ebs
+  # volume mode.
+  accessMode: ReadWriteOnce
 
+# docker registry config.
 docker:
+  # enable ingress
+  ingress: true
+  # registry image
+  image: registry:2.8.3
+  # docker registry host name
   host: registry.bufio.cn
-  webUi: registry-ui.bufio.cn
+  # docker data volume storage class name
+  storageClassName: aws-ebs
+  # volume mode.
+  accessMode: ReadWriteOnce
+  # docker registry data volume capacity
+  capacity: 30Gi
+  # docker registry secret for users.
   users:
     - username: admin
       password: admin

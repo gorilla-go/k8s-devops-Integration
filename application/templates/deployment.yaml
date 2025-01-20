@@ -57,6 +57,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
+    version: "{{ $version }}"
     com.yesglasses.deployment: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
     app.kubernetes.io/version: "{{ $version }}"
@@ -106,6 +107,10 @@ spec:
           env:
             - name: ENV_PRODUCTION
               value: {{ default "local" $productionMode }}
+          ports:
+            - name: tcp-php
+              containerPort: {{ $appConfig.listen }}
+              protocol: TCP
           readinessProbe:
             tcpSocket:
               port: {{ $appConfig.listen }}
@@ -157,6 +162,7 @@ metadata:
   name: {{ $appName }}
   namespace: {{ $namespace }}
   labels:
+    version: "{{ $version }}"
     com.yesglasses.service: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
     app.kubernetes.io/version: "{{ $version }}"
@@ -185,6 +191,7 @@ metadata:
   name: {{ $appName }}
   namespace: {{ $namespace }}
   labels:
+    version: "{{ $version }}"
     com.yesglasses.monitor: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
     app.kubernetes.io/version: "{{ $version }}"
@@ -208,6 +215,7 @@ metadata:
   name: {{ $appName }}-nginx-params
   namespace: {{ $namespace }}
   labels:
+    version: "{{ $version }}"
     com.yesglasses.configmap: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
     app.kubernetes.io/version: "{{ $version }}"
@@ -225,6 +233,7 @@ metadata:
   name: {{ $appName }}-nginx-auth
   namespace: {{ $namespace }}
   labels:
+    version: "{{ $version }}"
     com.yesglasses.secret: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
     app.kubernetes.io/version: "{{ $version }}"
@@ -241,6 +250,7 @@ metadata:
   name: {{ $appName }}
   namespace: {{ $namespace }}
   labels:
+    version: "{{ $version }}"
     com.yesglasses.ingress: {{ $appName }}
     com.yesglasses.application: {{ $appName }}
     app.kubernetes.io/version: "{{ $version }}"
