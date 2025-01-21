@@ -108,7 +108,6 @@ metadata:
   labels:
     com.yesglasses.ingress: docker-registry
   annotations:
-    nginx.ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: 2048M
 spec:
   rules:

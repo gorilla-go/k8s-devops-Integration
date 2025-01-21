@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: gitea
-          image: gitea/gitea:1.23.1
+          image: gitea/gitea:1.22.0
           resources:
             requests:
               cpu: 100m
@@ -52,12 +52,12 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 3000
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 10
           livenessProbe:
             tcpSocket:
               port: 3000
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 10
           env:
             - name: USER_UID
@@ -83,7 +83,7 @@ metadata:
     com.yesglasses.service: gitea
 spec:
   selector:
-    app: com.yesglasses.pod.gitea
+    com.yesglasses.pod: gitea
   ports:
     - port: 3000
       targetPort: 3000

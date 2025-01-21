@@ -3,7 +3,7 @@ git:
   # enable ingress
   ingress: true
   # gitea host name
-  host: git.bufio.cn
+  host: git.local
   # gitea data volume capacity
   capacity: 10Gi
   # gitea data volume storage class name
@@ -18,7 +18,7 @@ docker:
   # registry image
   image: registry:2.8.3
   # docker registry host name
-  host: registry.bufio.cn
+  host: registry.local
   # docker data volume storage class name
   storageClassName: aws-ebs
   # volume mode.
