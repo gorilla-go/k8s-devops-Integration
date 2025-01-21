@@ -44,21 +44,11 @@ spec:
               cpu: 100m
               memory: 100Mi
             limits:
-              cpu: 100m
-              memory: 100Mi
+              cpu: 200m
+              memory: 200Mi
           ports:
             - containerPort: 3000
               name: tcp-web
-          readinessProbe:
-            tcpSocket:
-              port: 3000
-            initialDelaySeconds: 60
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 3000
-            initialDelaySeconds: 60
-            periodSeconds: 10
           env:
             - name: USER_UID
               value: "1000"
