@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: {{ .Release.Namespace }}
+  labels:
+    com.yesglasses.daemonset: fluent-bit
+spec:
+  selector:
+    matchLabels:
+      com.yesglasses.pod: fluent-bit
+  template:
+    metadata:
+      labels:
+        com.yesglasses.pod: fluent-bit
+    spec:
+      serviceAccountName: fluent-bit
+      tolerations:
+        # this toleration is to have the daemonset runnable on master nodes
+        # remove it if your masters can't run pods
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      containers:
+        - name: fluent-bit
+          image: fluent/fluent-bit:3.2
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+          volumeMounts:
+            - name: fluent-bit-config
+              mountPath: /fluent-bit/etc/
+            - name: containers
+              mountPath: /var/log/containers
+            - name: pods
+              mountPath: /var/log/pods
+            - name: docker-containers
+              mountPath: /var/lib/docker/containers
+      volumes:
+        - name: fluent-bit-config
+          configMap:
+            name: fluent-bit-config
+        - name: containers
+          hostPath:
+            path: /var/log/containers
+        - name: pods
+          hostPath:
+            path: /var/log/pods/
+        - name: docker-containers
+          hostPath:
+            path: /var/lib/docker/containers
+
+---
+# create cluster service account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluent-bit
+  namespace: {{ .Release.Namespace }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluent-bit
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fluent-bit
+subjects:
+  - kind: ServiceAccount
+    name: fluent-bit
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: fluent-bit
+  apiGroup: rbac.authorization.k8s.io
+

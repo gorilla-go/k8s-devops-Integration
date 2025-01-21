@@ -20,17 +20,17 @@ app:
       imagePullPolicy: IfNotPresent
       imagePullSecrets:
       resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 200m
-            memory: 256Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
       scriptFile: /sites/$subdomain/index.php
       mounts:
         - mountPath: /sites/
           name: sites
-      listen: 9000
+      bodyLimit: 32M
       monitor:
         enabled: false
         scrapeUri: tcp://127.0.0.1:9001/fpm_status
@@ -46,7 +46,7 @@ app:
       volumes:
         - name: sites
           persistentVolumeClaim:
-              claimName: sites
+            claimName: sites
 
 dockerRegistry:
   secrets:

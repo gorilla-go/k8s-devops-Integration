@@ -17,56 +17,13 @@ data:
 {{- end }}
 
 {{- range $appName, $appConfig := .Values.app.php }}
-apiVersion: app.k8s.io/v1beta1
-kind: Application
-metadata:
-  name: application-{{ $appName }}
-  namespace: {{ $namespace }}
-  labels:
-    app.kubernetes.io/version: "{{ $version }}"
-    app.kubernetes.io/name: "application-{{ $appName }}"
-  annotations:
-    servicemesh.kubesphere.io/enabled: 'true'
-spec:
-  componentKinds:
-    - group: apps
-      kind: Deployment
-    - group: ''
-      kind: Service
-    - group: monitoring.coreos.com
-      kind: ServiceMonitor
-    - group: ''
-      kind: ConfigMap
-    - group: ''
-      kind: Secret
-    - group: extensions
-      kind: Ingress
-    - group: servicemesh.kubesphere.io
-      kind: Strategy
-    - group: servicemesh.kubesphere.io
-      kind: ServicePolicy
-
-  descriptor:
-  selector:
-    matchLabels: 
-      com.yesglasses.application: {{ $appName }}
-  addOwnerRef: true
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    version: "{{ $version }}"
     com.yesglasses.deployment: {{ $appName }}
-    com.yesglasses.application: {{ $appName }}
-    app.kubernetes.io/version: "{{ $version }}"
-    app.kubernetes.io/name: "application-{{ $appName }}"
   name: {{ $appName }}
   namespace: {{ $namespace }}
-  annotations:
-    kubesphere.io/isElasticReplicas: "true"
-    servicemesh.kubesphere.io/enabled: "true"
 spec:
   replicas: {{ default 1 $appConfig.replicas }}
   selector:
@@ -81,11 +38,6 @@ spec:
     metadata:
       labels:
         com.yesglasses.pod: {{ $appName }}
-        com.yesglasses.application: {{ $appName }}
-        app.kubernetes.io/version: "{{ $version }}"
-        app.kubernetes.io/name: "application-{{ $appName }}"
-      annotations:
-        sidecar.istio.io/inject: 'true'
     spec:
       {{- if not (empty $appConfig.imagePullSecrets) }}
       imagePullSecrets:
@@ -109,11 +61,11 @@ spec:
               value: {{ default "local" $productionMode }}
           ports:
             - name: tcp-php
-              containerPort: {{ $appConfig.listen }}
+              containerPort: 9000
               protocol: TCP
           readinessProbe:
             tcpSocket:
-              port: {{ $appConfig.listen }}
+              port: 9000
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 2
@@ -121,7 +73,7 @@ spec:
             failureThreshold: 3
           livenessProbe:
             tcpSocket:
-              port: {{ $appConfig.listen }}
+              port: 9000
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 2
@@ -162,18 +114,12 @@ metadata:
   name: {{ $appName }}
   namespace: {{ $namespace }}
   labels:
-    version: "{{ $version }}"
     com.yesglasses.service: {{ $appName }}
-    com.yesglasses.application: {{ $appName }}
-    app.kubernetes.io/version: "{{ $version }}"
-    app.kubernetes.io/name: "application-{{ $appName }}"
-  annotations:
-    servicemesh.kubesphere.io/enabled: 'true'
 spec:
   ports:
     - name: tcp-php
-      port: {{ $appConfig.listen }}
-      targetPort: {{ $appConfig.listen }}
+      port: 9000
+      targetPort: 9000
     {{- if $appConfig.monitor.enabled }}
     - name: http-exporter
       port: 9253
@@ -191,11 +137,7 @@ metadata:
   name: {{ $appName }}
   namespace: {{ $namespace }}
   labels:
-    version: "{{ $version }}"
     com.yesglasses.monitor: {{ $appName }}
-    com.yesglasses.application: {{ $appName }}
-    app.kubernetes.io/version: "{{ $version }}"
-    app.kubernetes.io/name: "application-{{ $appName }}"
 spec:
   jobLabel: {{ $appName }}
   namespaceSelector:
@@ -215,11 +157,7 @@ metadata:
   name: {{ $appName }}-nginx-params
   namespace: {{ $namespace }}
   labels:
-    version: "{{ $version }}"
     com.yesglasses.configmap: {{ $appName }}
-    com.yesglasses.application: {{ $appName }}
-    app.kubernetes.io/version: "{{ $version }}"
-    app.kubernetes.io/name: "application-{{ $appName }}"
 data:
   {{- if not (empty $appConfig.scriptFile) }}
   SCRIPT_FILENAME: {{ $appConfig.scriptFile | quote }}
@@ -233,11 +171,7 @@ metadata:
   name: {{ $appName }}-nginx-auth
   namespace: {{ $namespace }}
   labels:
-    version: "{{ $version }}"
     com.yesglasses.secret: {{ $appName }}
-    com.yesglasses.application: {{ $appName }}
-    app.kubernetes.io/version: "{{ $version }}"
-    app.kubernetes.io/name: "application-{{ $appName }}"
 type: Opaque
 data:
   auth: {{ htpasswd $appConfig.basicAuth.username $appConfig.basicAuth.password | b64enc }}
@@ -250,15 +184,11 @@ metadata:
   name: {{ $appName }}
   namespace: {{ $namespace }}
   labels:
-    version: "{{ $version }}"
     com.yesglasses.ingress: {{ $appName }}
-    com.yesglasses.application: {{ $appName }}
-    app.kubernetes.io/version: "{{ $version }}"
-    app.kubernetes.io/name: "application-{{ $appName }}"
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "FCGI"
     nginx.ingress.kubernetes.io/fastcgi-index: "index.php"
-    nginx.ingress.kubernetes.io/proxy-body-size: 32M
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ $appConfig.bodyLimit }}
     nginx.ingress.kubernetes.io/fastcgi-params-configmap: "{{ $appName }}-nginx-params"
     {{- if $appConfig.basicAuth.enabled }}
     nginx.ingress.kubernetes.io/auth-type: basic
@@ -280,6 +210,6 @@ spec:
               service:
                 name: {{ $appName }}
                 port:
-                  number: {{ $appConfig.listen }}
+                  number: 9000
     {{- end }}
 {{- end }}
