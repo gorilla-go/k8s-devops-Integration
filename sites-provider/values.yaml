@@ -22,14 +22,70 @@ webhook:
   sitesMountPath: /sites/
   # scripts mount path: /var/scripts/
   scripts:
-    pull-repo.sh: |
+    # redirect internal network
+    redirect.sh: |
       #!/bin/sh
-      # pull or update git repository.
+      origin_url="http://git.local/"
+      redirect_url="http://gitea/"
+
+      refs=$1
+      clone_url=$2
+      path=${clone_url#${origin_url}}
+      branch=${refs#"refs/heads/"}
+      clone="${redirect_url}$path"
+
+    git-change.sh: |
+      #!/bin/sh
+      project=$1
+
+      # check project empty
+      if [ -z "$project" ]; then
+        echo "project is empty!"
+        exit 0
+      fi
+
+      # get current dir
+      pwd=$(cd "$(dirname "$0")" && pwd)
+
+      # load redirect script.
+      source $pwd/redirect.sh $2 $3
+
+      # if branch is not master.
+      if [ "$branch" == "master" ]; then
+        deploy_path="/sites/$project/www/"
+      else
+        deploy_path="/sites/$project/$branch/"
+      fi
+
+      # check if target path exists.
+      if [ ! -d "$deploy_path" ]; then
+        mkdir -p "$deploy_path"
+      fi
+
+      cd "$deploy_path"
+
+      # is a git repo.
+      if [ -d ".git" ]; then
+        # reset all change.
+        git reset --hard
+        git pull origin ${branch}
+        exit 0
+      fi
+
+      # not a git repo.
+      git clone $clone $deploy_path
 
   # hooks.json mount path: /var/webhook/hooks.json
   hooks:
-    - id: pull-repo
+    - id: on-demo-change
       execute-command: "sh"
       pass-arguments-to-command:
         - source: string
-          name: "/var/scripts/pull-repo.sh"
+          name: /var/scripts/git-change.sh
+        # project name, for example: www.yesglasses.com
+        - source: string
+          name: www.yesglasses.com
+        - source: payload
+          name: "ref"
+        - source: payload
+          name: "repository.clone_url"

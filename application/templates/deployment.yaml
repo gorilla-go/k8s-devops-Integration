@@ -81,7 +81,7 @@ spec:
             failureThreshold: 3
           {{- if not (empty $appConfig.mounts) }}
           volumeMounts:
-            {{ default "" (toYaml $appConfig.mounts) | nindent 18 }}
+            {{- default "" (toYaml $appConfig.mounts) | nindent 12 }}
           {{- end }}
 
         {{- if $appConfig.monitor.enabled }}
@@ -104,7 +104,7 @@ spec:
       restartPolicy: {{ $appConfig.restartPolicy }}
       {{- if not (empty $appConfig.volumes) }}
       volumes:
-        {{ toYaml $appConfig.volumes | nindent 14 }}
+        {{- toYaml $appConfig.volumes | nindent 8 }}
       {{- end }}
 
 ---
@@ -196,7 +196,8 @@ metadata:
     nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
     {{- end }}
     {{- if not (empty $appConfig.serverSnippet) }}
-    nginx.ingress.kubernetes.io/server-snippet: {{ $appConfig.serverSnippet | nindent 6 }}
+    nginx.ingress.kubernetes.io/server-snippet: |
+      {{- $appConfig.serverSnippet | nindent 6 }}
     {{- end }}
 spec:
   rules:

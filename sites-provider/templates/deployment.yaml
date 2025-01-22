@@ -24,13 +24,10 @@ spec:
       containers:
       - name: sites-webhook
         image: {{ .Values.webhook.image }}
-        securityContext:
-          runAsUser: 0
-          runAsGroup: 0
         resources:
           limits:
-            cpu: {{ default "20m" .Values.webhook.resources.limits.cpu }}
-            memory: {{  default "50Mi" .Values.webhook.resources.limits.memory }}
+            cpu: {{ default "50m" .Values.webhook.resources.limits.cpu }}
+            memory: {{  default "100Mi" .Values.webhook.resources.limits.memory }}
           requests:
             cpu: {{ default "10m" .Values.webhook.resources.requests.cpu }}
             memory: {{ default "20Mi" .Values.webhook.resources.requests.memory }}
@@ -52,8 +49,8 @@ spec:
             claimName: {{ .Values.pvc.name }}
         - name: scripts
           configMap:
+            defaultMode: 0755
             name: {{ .Values.webhook.name }}-scripts
         - name: hooks-cm
           configMap:
             name: {{ .Values.webhook.name }}
-      

@@ -26,11 +26,6 @@ spec:
     matchLabels:
       com.yesglasses.pod: gitea
   replicas: 1
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -75,7 +70,7 @@ spec:
   selector:
     com.yesglasses.pod: gitea
   ports:
-    - port: 3000
+    - port: 80
       targetPort: 3000
       name: tcp-web
 
@@ -100,5 +95,5 @@ spec:
               service:
                 name: gitea
                 port:
-                  number: 3000
+                  number: 80
 {{- end }}
