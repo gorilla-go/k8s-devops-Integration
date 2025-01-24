@@ -1,3 +1,56 @@
-# nfs server config example.
-## install nfs server  apt install nfs-kernel-server
+# docker install
+curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
+
+## docker run as rootless
+dockerd-rootless-setuptool.sh install
+
+# minikube install
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+
+# install kubectl & helm
+sudo snap install kubectl --classic
+sudo snap install helm --classic
+
+# nfs server config example. for dev
+## install nfs server  
+apt install nfs-kernel-server
+
+## nfs config example. port (2049)
 /share  *(rw,sync,no_subtree_check,no_root_squash,insecure)
+
+## valid nfs server accessable(local).
+showmount -e 127.0.0.1
+
+
+# start k8s cluster
+minikube start -c containerd --cni calico
+
+# add k8s members.
+minikube node add
+
+# clear minikube (delete)
+minikube delete
+
+# show k8s nodes
+kubectl get node
+
+# show node describe
+kubectl describe node xxxx(node name)
+
+# deploy yesglasses helm package. enter package root path (Chart.yaml)
+helm install yesglasses -n yesglasses --create-namespace .
+
+# update helm package
+helm upgrade yesglasses -n yesglasses .
+
+# show helm installed packages
+helm list -A
+
+# show installed pods
+kubectl get pod -A
+
+# show pod detail or debug
+kubectl describe -n yesglasses pod <pod-name>
+
+# inspect pod
