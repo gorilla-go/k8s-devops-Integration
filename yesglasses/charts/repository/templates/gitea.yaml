@@ -1,0 +1,98 @@
+{{- if .Values.git.enable -}}
+{{- $projectName := include "projectName" . -}}
+{{- $namespace := include "namespace" . -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitea-data
+  namespace: {{ $namespace }}
+  labels:
+    com.{{ $projectName }}.pvc: gitea-data
+spec:
+  accessModes:
+    - {{ .Values.git.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.git.capacity }}
+  storageClassName: {{ .Values.git.storageClassName }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  gitea
+  namespace: {{ $namespace }}
+  labels:
+    com.{{ $projectName }}.deployment: gitea
+spec:
+  selector:
+    matchLabels:
+      com.{{ $projectName }}.pod: gitea
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        com.{{ $projectName }}.pod: gitea
+    spec:
+      containers:
+      - name: gitea
+        image: {{ .Values.git.image }}
+        env:
+        - name: USER_UID
+          value: "1000"
+        - name: USER_GID
+          value: "1000"
+        ports:
+        - containerPort: 3000
+          name: tcp-web
+        volumeMounts:
+        - name: gitea-data
+          mountPath: /data
+      volumes:
+      - name: gitea-data
+        persistentVolumeClaim:
+          claimName: gitea-data
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.git.serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    com.{{ $projectName }}.service: {{ .Values.git.serviceName }}
+spec:
+  selector:
+    com.{{ $projectName }}.pod: gitea
+  ports:
+    - port: 80
+      targetPort: 3000
+      name: tcp-web
+
+{{- if .Values.git.ingress }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: git
+  namespace: {{ $namespace }}
+  labels:
+    com.{{ $projectName }}.ingress: git
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ default "128M" .Values.git.bodySize }}
+spec:
+  ingressClassName: {{ .Values.global.ingress.className }}
+  rules:
+    - host: {{ .Values.git.host }}
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: gitea
+                port:
+                  number: 80
+{{- end }}
+{{- end -}}

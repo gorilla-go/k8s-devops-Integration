@@ -1,0 +1,43 @@
+# gitea config.
+git:
+  # enable gitea
+  enable: true
+  # enable ingress
+  ingress: true
+  # gitea host name
+  host: git.local
+  # gitea service name
+  serviceName: gitea
+  # gitea version
+  image: gitea/gitea:1.22.0
+  # gitea data volume capacity
+  capacity: 10Gi
+  # gitea ingress max body size
+  bodySize: 128M
+  # gitea data volume storage class name
+  storageClassName: aws-efs
+  # volume mode.
+  accessMode: ReadWriteMany
+
+# docker registry config.
+docker:
+  # enable docker registry
+  enable: true
+  # enable ingress
+  ingress: true
+  # registry image
+  image: registry:2.8.3
+  # docker registry host name
+  host: registry.local
+  # docker data volume storage class name
+  storageClassName: aws-efs
+  # volume mode.
+  accessMode: ReadWriteMany
+  # docker registry data volume capacity
+  capacity: 30Gi
+  # docker registry nginx max body size
+  bodySize: 2048M
+  # docker registry secret for users.
+  users:
+    - username: admin
+      password: admin

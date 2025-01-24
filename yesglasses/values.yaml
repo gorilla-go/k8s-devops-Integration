@@ -1,0 +1,169 @@
+# global config.
+global:
+  # helm deploy mode production or dev.
+  mode: dev
+  namespace: yesglasses
+  name: yesglasses
+  ingress:
+    # keep this value in sync with the ingressClassName in the ingress-nginx controller
+    className: &ingressClassName nginx
+  prometheus:
+    enable: &prometheusEnabled true
+
+# storageclass config
+storageclass:
+  # nfs server csi provisioner config
+  nfs-subdir-external-provisioner:
+    # enable nfs server csi provisioner
+    enable: true
+    # nfs server config
+    nfs:
+      server: 47.130.54.247
+      path: /share
+      mountOptions:
+      volumeName: nfs-subdir-external-provisioner-root
+      # Reclaim policy for the main nfs volume
+      reclaimPolicy: Retain
+    # storage class config
+    storageClass:
+      # enable storage class
+      create: true
+      # Set a provisioner name. If unset, a name will be generated.
+      provisionerName: nfs.csi.k8s.io
+      # Set StorageClass as the default StorageClass
+      # Ignored if storageClass.create is false
+      defaultClass: false
+      # Set a StorageClass name
+      # Ignored if storageClass.create is false
+      name: aws-efs
+      # Allow volume to be expanded dynamically
+      allowVolumeExpansion: true
+      # Method used to reclaim an obsoleted volume
+      reclaimPolicy: Retain
+      # When set to false your PVs will not be archived by the provisioner upon deletion of the PVC.
+      archiveOnDelete: true
+      # If it exists and has 'delete' value, delete the directory. If it exists and has 'retain' value, save the directory.
+      # Overrides archiveOnDelete.
+      # Ignored if value not set.
+      onDelete:
+      # Specifies a template for creating a directory path via PVC metadata's such as labels, annotations, name or namespace.
+      # Ignored if value not set.
+      pathPattern:
+      # Set access mode - ReadWriteOnce, ReadOnlyMany or ReadWriteMany
+      accessModes: ReadWriteMany
+      # Set volume bindinng mode - Immediate or WaitForFirstConsumer
+      volumeBindingMode: Immediate
+      # Storage class annotations
+      annotations: {}
+
+# repository config
+repository:
+  # gitea config.
+  git:
+    # enable gitea
+    enable: true
+    # enable ingress
+    ingress: true
+    # gitea host name
+    host: &gitHost git.local
+    # gitea service name
+    serviceName: &gitServiceName gitea
+    # gitea version
+    image: gitea/gitea:1.22.0
+    # gitea data volume capacity
+    capacity: 10Gi
+    # gitea ingress max body size
+    bodySize: 128M
+    # gitea data volume storage class name
+    storageClassName: aws-efs
+    # volume mode.
+    accessMode: ReadWriteMany
+
+  # docker registry config.
+  docker:
+    # enable docker registry
+    enable: true
+    # enable ingress
+    ingress: true
+    # registry image
+    image: registry:2.8.3
+    # docker registry host name
+    host: registry.local
+    # docker data volume storage class name
+    storageClassName: aws-efs
+    # volume mode.
+    accessMode: ReadWriteMany
+    # docker registry data volume capacity
+    capacity: 30Gi
+    # docker registry nginx max body size
+    bodySize: 2048M
+    # docker registry secret for users.
+    users:
+      - username: admin
+        password: admin
+
+# ingress config
+ingress:
+  # ingress-nginx config
+  ingress-nginx:
+    # enable ingress-nginx
+    enable: true
+    # ingress-nginx controller config
+    controller:
+      # ingress class
+      ingressClassResource:
+        # ingress class name
+        name: *ingressClassName
+        # default ingress class
+        default: true
+      # prometheus config
+      metrics:
+        # enable prometheus
+        enabled: *prometheusEnabled
+        # enable service monitor
+        serviceMonitor:
+          # enable service monitor
+          enabled: *prometheusEnabled
+          # enable prometheus rule
+          prometheusRule:
+            enabled: *prometheusEnabled
+      podAnnotations:
+        prometheus.io/port: "10254"
+        prometheus.io/scrape: "true"
+
+# sites-provider config
+sites-provider:
+  # sites program collection pvc.
+  pvc:
+    name: sites-provider
+    storageClassName: aws-efs
+    accessMode: ReadWriteMany
+    capacity: 10Gi
+    # dynamic or static
+    mode: dynamic
+    # csi for production mode
+    csi:
+      driver: efs.csi.aws.com
+      volumeHandle: fs-12345678
+
+  # sites-provider webhook config
+  webhook:
+    gitHost: *gitHost
+    gitServiceName: *gitServiceName
+
+# prometheus config
+prometheus:
+  # prometheus-stack config
+  kube-prometheus-stack:
+    # enable prometheus-stack
+    enabled: *prometheusEnabled
+    # prometheus config
+    prometheus:
+      # enable ingress
+      ingress:
+        enabled: true
+        ingressClassName: *ingressClassName
+        annotations: {}
+        labels: {}
+        hosts:
+          - prometheus.local
