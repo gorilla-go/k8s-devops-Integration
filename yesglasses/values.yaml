@@ -166,7 +166,7 @@ elasticsearch:
 
 # log-collector config
 log-collector:
-  enabled: false
+  enabled: true
 
 # mysql innodb cluster config
 mysql:

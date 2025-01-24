@@ -15,22 +15,24 @@ sudo snap install helm --classic
 # nfs server config example. for dev
 ## install nfs server  
 apt install nfs-kernel-server
+mkdir /share && chmod -R 777 /share
 
 ## nfs config example. port (2049)
 /share  *(rw,sync,no_subtree_check,no_root_squash,insecure)
+
+## systemctl restart nfs server
+systemctl restart nfs-kernel-server
 
 ## valid nfs server accessable(local).
 showmount -e 127.0.0.1
 
 
 # start k8s cluster
-minikube start -c containerd --cni calico
+
+sudo minikube start --cpus="max" --memory="max" -c containerd --force
 
 # add k8s members.
 minikube node add
-
-# clear minikube (delete)
-minikube delete
 
 # show k8s nodes
 kubectl get node
