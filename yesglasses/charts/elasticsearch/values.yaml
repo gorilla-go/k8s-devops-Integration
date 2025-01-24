@@ -1,4 +1,5 @@
 elasticsearch:
+  enabled: false
   clusterName: "elasticsearch"
   nodeGroup: "master"
 

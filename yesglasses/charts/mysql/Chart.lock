@@ -2,5 +2,8 @@ dependencies:
 - name: mysql-operator
   repository: https://mysql.github.io/mysql-operator/
   version: 2.1.5
-digest: sha256:3aa9e900176e1b0799f95d8dacb99a54a99e0b2955e9fee955ced39c2215a8df
-generated: "2024-10-23T18:18:19.241451+08:00"
+- name: mysql-innodbcluster
+  repository: https://mysql.github.io/mysql-operator/
+  version: 2.1.5
+digest: sha256:7994adefaeddcd0af6bc6557e9127df7d41d3fff83b77855bdc0b37ff1cc8950
+generated: "2025-01-24T12:40:23.185495+08:00"

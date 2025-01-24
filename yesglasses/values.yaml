@@ -131,6 +131,14 @@ ingress:
         prometheus.io/port: "10254"
         prometheus.io/scrape: "true"
 
+      # autoscaling:
+      autoscaling:
+        enabled: false
+        minReplicas: 1
+        maxReplicas: 4
+        targetCPUUtilizationPercentage: 50
+        targetMemoryUtilizationPercentage: 50
+
 # sites-provider config
 sites-provider:
   # sites program collection pvc.
@@ -150,6 +158,23 @@ sites-provider:
   webhook:
     gitHost: *gitHost
     gitServiceName: *gitServiceName
+
+# elasticsearch config
+elasticsearch:
+  elasticsearch:
+    enabled: false
+
+# log-collector config
+log-collector:
+  enabled: false
+
+# mysql innodb cluster config
+mysql:
+  mysql-innodbcluster:
+    enabled: true
+    metrics:
+      enable: *prometheusEnabled
+    mycnf: ""
 
 # prometheus config
 prometheus:

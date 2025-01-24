@@ -1,3 +1,7 @@
+# log-collector config
+enabled: true
+
+# fluent-bit config
 config: |
   [SERVICE]
     Flush             1
@@ -53,6 +57,7 @@ config: |
     Logstash_Format     On
     Suppress_Type_Name   On
 
+# fluent-bit parses config
 parseConfig: |
   [PARSER]
     Name         docker

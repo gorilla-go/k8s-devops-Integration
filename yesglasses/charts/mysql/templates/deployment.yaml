@@ -1,0 +1,76 @@
+{{- if .Values.phpmyadmin.enabled }}
+{{- $projectName := include "projectName" . -}}
+{{- $namespace := include "namespace" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  phpmyadmin
+  namespace: {{ $namespace }}
+  labels:
+    com.{{ $projectName }}.deployment: phpmyadmin
+spec:
+  selector:
+    matchLabels:
+      com.{{ $projectName }}.pod: phpmyadmin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        com.{{ $projectName }}.pod: phpmyadmin
+    spec:
+      containers:
+      - name: phpmyadmin
+        image: phpmyadmin/phpmyadmin:5.1.1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        env:
+        - name: PMA_HOSTS
+          value: {{ .Values.phpmyadmin.mysql.hosts | quote }}
+        - name: PMA_PORTS
+          value: {{ .Values.phpmyadmin.mysql.ports | quote }}
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpmyadmin
+  namespace: {{ $namespace }}
+  labels:
+    com.{{ $projectName }}.service: phpmyadmin
+spec:
+  selector:
+    com.{{ $projectName }}.pod: phpmyadmin
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+    name: tcp-web
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: phpmyadmin
+  namespace: {{ $namespace }}
+  labels:
+    com.{{ $projectName }}.ingress: phpmyadmin
+spec:
+  ingressClassName: {{ .Values.global.ingress.className }}
+  rules:
+    - host: {{ .Values.phpmyadmin.hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: phpmyadmin
+                port:
+                  number: 80
+{{- end }}

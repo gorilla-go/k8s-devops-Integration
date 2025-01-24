@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -84,4 +85,4 @@ roleRef:
   kind: ClusterRole
   name: fluent-bit
   apiGroup: rbac.authorization.k8s.io
-
+{{- end }}

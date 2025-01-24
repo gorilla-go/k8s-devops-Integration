@@ -24,7 +24,7 @@ version: 0.1.0
 appVersion: "1.16.0"
 
 dependencies:
-  - condition: mysql.enabled
+  - condition: mysql-operator.enabled
     name: mysql-operator
     version: 2.1.5
     repository: https://mysql.github.io/mysql-operator/

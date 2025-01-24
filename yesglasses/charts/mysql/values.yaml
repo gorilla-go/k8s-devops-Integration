@@ -1,32 +1,83 @@
 # mysql innodb cluster
-mysql:
+mysql-innodbcluster:
   enabled: true
-  name: mysql-cluster
-  rootSecretName: mysql-secret
-  version: 8.4.3
+  # mysql credentials
   credentials:
     root:
       user: root
       password: root
       host: "%"
 
+  # mysql tls config
+  tls:
+    useSelfSigned: true
+
+  # mysql server config
   serverInstances: 1
-  routerInstances: 1
-  backupIndex: 1
-  cloneIndex: 1
-  storage: 10Gi
+  baseServerId: 1000
+  datadirVolumeClaimTemplate:
+    storageClassName: aws-ebs
+    resources:
+      requests:
+        storage: 20Gi
 
-  resources:
-    requests:
-      cpu: 500m
-      memory: 1024Mi
-    limits:
-      cpu: 1000m
-      memory: 4096Mi
+  # mysql router config
+  router:
+    instances: 1
 
-  monitor:
-    enabled: true
+  # mysql logs config
+  logs:
+    error:
+      verbosity: 3
+      collect: false
+    slowQuery:
+      enabled: true
+      longQueryTime: 1
 
+  # mysql metrics config
+  metrics:
+    enable: true
+    image: prom/mysqld-exporter:v0.13.0
+    monitor: true
+    monitorSpec: {}
+
+  # mysql mycnf config
+  mycnf: ""
+
+  # mysql pod spec config
+  podSpec:
+    containers:
+      - name: mysql
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "2000m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+    affinity:
+      podAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: com.yesglasses.pod
+                    operator: NotIn
+                    values:
+                      - mysql
+              topologyKey: kubernetes.io/hostname
+
+# mysql operator config
 mysql-operator:
+  enabled: true
   envs:
     k8sClusterDomain: cluster.local
+
+# phpmyadmin config
+phpmyadmin:
+  enabled: true
+  hostname: pma.local
+  mysql:
+    hosts: mysql-cluster
+    ports: 3306
