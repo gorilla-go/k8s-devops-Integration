@@ -1,64 +1,55 @@
-{{ $namespace := .Release.Namespace }}
-{{ $productionMode := .Values.production_mode }}
-{{ $version := .Release.Revision }}
+{{ $namespace := include "namespace" . }}
+{{ $projectName := include "projectName" . }}
+{{ $productionMode := .Values.global.mode }}
 
-{{- if not (empty .Values.dockerRegistry.secrets) }}
-{{- range $name, $item := .Values.dockerRegistry.secrets }}
+{{- if .Values.global.dockerRegistry.enabled }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: docker-registry-{{ $name }}
+  name: docker-registry-secret
   namespace: {{ $namespace }}
+  labels:
+    com.{{ $projectName }}.secret: docker-registry-secret
 type: kubernetes.io/dockerconfigjson
 data:
-  .dockerconfigjson: {{ dict "auths" (dict $item.server (dict "username" $item.username "password" $item.password "email" $item.email "auth" (nospace (cat $item.username ":" $item.password) | b64enc))) | toJson | b64enc }}
+  .dockerconfigjson: {{ dict "auths" (dict .Values.global.dockerRegistry.host (dict "username" .Values.global.dockerRegistry.secrets.username "password" .Values.global.dockerRegistry.secrets.password "email" .Values.global.dockerRegistry.secrets.email "auth" (nospace (cat .Values.global.dockerRegistry.secrets.username ":" .Values.global.dockerRegistry.secrets.password) | b64enc))) | toJson | b64enc }}
 ---
-{{ end -}}
 {{- end }}
 
-{{- range $appName, $appConfig := .Values.app.php }}
+
+{{- range $appName, $appConfig := .Values.apps.php }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    com.yesglasses.deployment: {{ $appName }}
+    com.{{ $projectName }}.deployment: {{ $appName }}
   name: {{ $appName }}
   namespace: {{ $namespace }}
 spec:
   replicas: {{ default 1 $appConfig.replicas }}
   selector:
     matchLabels:
-      com.yesglasses.pod: {{ $appName }}
+      com.{{ $projectName }}.pod: {{ $appName }}
   strategy:
-    type: {{ default "RollingUpdate" $appConfig.strategy.type }}
-    rollingUpdate:
-      maxUnavailable: {{ default "25%" $appConfig.strategy.maxUnavailable }}
-      maxSurge: {{ default "25%" $appConfig.strategy.maxSurge }}
+    {{- toYaml $appConfig.strategy | nindent 4 }}
   template:
     metadata:
       labels:
-        com.yesglasses.pod: {{ $appName }}
+        com.{{ $projectName }}.pod: {{ $appName }}
     spec:
-      {{- if not (empty $appConfig.imagePullSecrets) }}
+      {{- if $appConfig.imagePullSecrets.enabled }}
       imagePullSecrets:
-        {{- range $index, $item := $appConfig.imagePullSecrets }}
-        - name: docker-registry-{{ $item.name }}
-        {{- end }}
+        - name: docker-registry-secret
       {{- end }}
       containers:
         - image: {{ $appConfig.image }}
           imagePullPolicy: {{ default "IfNotPresent" $appConfig.imagePullPolicy }}
-          name: php
+          name: php-{{ $appName }}
           resources:
-            requests:
-              cpu: {{ default "100m" $appConfig.resources.requests.cpu }}
-              memory: {{ default "128Mi" $appConfig.resources.requests.memory }}
-            limits:
-              cpu: {{ default "200m" $appConfig.resources.limits.cpu }}
-              memory: {{ default "256Mi" $appConfig.resources.limits.memory }}
+            {{- toYaml $appConfig.resources | nindent 12 }}
           env:
             - name: ENV_PRODUCTION
-              value: {{ default "local" $productionMode }}
+              value: {{ default "dev" $productionMode }}
           ports:
             - name: tcp-php
               containerPort: 9000
@@ -79,33 +70,24 @@ spec:
             timeoutSeconds: 2
             successThreshold: 1
             failureThreshold: 3
-          {{- if not (empty $appConfig.mounts) }}
           volumeMounts:
-            {{- default "" (toYaml $appConfig.mounts) | nindent 12 }}
-          {{- end }}
+            - name: sites
+              mountPath: /sites
 
         {{- if $appConfig.monitor.enabled }}
         - name: php-fpm-exporter
-          image: hipages/php-fpm_exporter:2.2
+          image: {{ $appConfig.monitor.exporter.image }}
           resources:
-            requests:
-              cpu: {{ default "10m" $appConfig.monitor.resources.requests.cpu }}
-              memory: {{ default "32Mi" $appConfig.monitor.resources.requests.memory }}
-            limits:
-              cpu: {{ default "20m" $appConfig.monitor.resources.limits.cpu }}
-              memory: {{ default "64Mi" $appConfig.monitor.resources.limits.memory }}
+            {{- toYaml $appConfig.monitor.exporter.resources | nindent 12 }}
           env:
-            - name: PHP_FPM_SCRAPE_URI
-              value: {{ default "tcp://127.0.0.1:9001/status" $appConfig.monitor.scrapeUri }}
-            - name: PHP_FPM_FIX_PROCESS_COUNT
-              value: "1"
+            {{- toYaml $appConfig.monitor.exporter.env | nindent 12 }}
         {{- end }}
 
       restartPolicy: {{ $appConfig.restartPolicy }}
-      {{- if not (empty $appConfig.volumes) }}
       volumes:
-        {{- toYaml $appConfig.volumes | nindent 8 }}
-      {{- end }}
+        - name: sites
+          persistentVolumeClaim:
+            claimName: {{ $appConfig.mountSitesProviderName }}
 
 ---
 apiVersion: v1
@@ -114,7 +96,7 @@ metadata:
   name: {{ $appName }}
   namespace: {{ $namespace }}
   labels:
-    com.yesglasses.service: {{ $appName }}
+    com.{{ $projectName }}.service: {{ $appName }}
 spec:
   ports:
     - name: tcp-php
@@ -122,11 +104,11 @@ spec:
       targetPort: 9000
     {{- if $appConfig.monitor.enabled }}
     - name: http-exporter
-      port: 9253
-      targetPort: 9253
+      port: {{ $appConfig.monitor.exporter.port }}
+      targetPort: {{ $appConfig.monitor.exporter.port }}
     {{- end }}
   selector:
-    com.yesglasses.pod: {{ $appName }}
+    com.{{ $projectName }}.pod: {{ $appName }}
   type: ClusterIP
 
 ---
@@ -137,7 +119,7 @@ metadata:
   name: {{ $appName }}
   namespace: {{ $namespace }}
   labels:
-    com.yesglasses.monitor: {{ $appName }}
+    com.{{ $projectName }}.monitor: {{ $appName }}
 spec:
   jobLabel: {{ $appName }}
   namespaceSelector:
@@ -145,7 +127,7 @@ spec:
       - {{ $namespace }}
   selector:
     matchLabels:
-      com.yesglasses.service: {{ $appName }}
+      com.{{ $projectName }}.service: {{ $appName }}
   endpoints:
     - port: http-exporter
 {{- end }}
@@ -157,7 +139,7 @@ metadata:
   name: {{ $appName }}-nginx-params
   namespace: {{ $namespace }}
   labels:
-    com.yesglasses.configmap: {{ $appName }}
+    com.{{ $projectName }}.configmap: {{ $appName }}
 data:
   {{- if not (empty $appConfig.scriptFile) }}
   SCRIPT_FILENAME: {{ $appConfig.scriptFile | quote }}
@@ -171,7 +153,7 @@ metadata:
   name: {{ $appName }}-nginx-auth
   namespace: {{ $namespace }}
   labels:
-    com.yesglasses.secret: {{ $appName }}
+    com.{{ $projectName }}.secret: {{ $appName }}
 type: Opaque
 data:
   auth: {{ htpasswd $appConfig.basicAuth.username $appConfig.basicAuth.password | b64enc }}
@@ -184,12 +166,12 @@ metadata:
   name: {{ $appName }}
   namespace: {{ $namespace }}
   labels:
-    com.yesglasses.ingress: {{ $appName }}
+    com.{{ $projectName }}.ingress: {{ $appName }}
   annotations:
-    nginx.ingress.kubernetes.io/ingress-class: {{ .Values.ingress.ingressClassName }}
+    nginx.ingress.kubernetes.io/ingress-class: {{ $appConfig.ingressClassName }}
     nginx.ingress.kubernetes.io/backend-protocol: "FCGI"
     nginx.ingress.kubernetes.io/fastcgi-index: "index.php"
-    nginx.ingress.kubernetes.io/proxy-body-size: {{ $appConfig.bodyLimit }}
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ $appConfig.bodyLimit | quote }}
     nginx.ingress.kubernetes.io/fastcgi-params-configmap: "{{ $appName }}-nginx-params"
     {{- if $appConfig.basicAuth.enabled }}
     nginx.ingress.kubernetes.io/auth-type: basic
@@ -201,6 +183,7 @@ metadata:
       {{- $appConfig.serverSnippet | nindent 6 }}
     {{- end }}
 spec:
+  ingressClassName: {{ $appConfig.ingressClassName }}
   rules:
     {{- range $i, $hostname := $appConfig.hostnames }}
     - host: {{ $hostname | quote }}

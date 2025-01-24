@@ -7,8 +7,93 @@ global:
   ingress:
     # keep this value in sync with the ingressClassName in the ingress-nginx controller
     className: &ingressClassName nginx
+  # prometheus config
   prometheus:
     enable: &prometheusEnabled true
+  # docker registry config
+  dockerRegistry:
+    enabled: &dockerRegistryEnabled true
+    # docker registry host name
+    host: &dockerHostName registry.local
+    # enable docker registry
+    secrets:
+      email: docker@yesglasses.com
+      username: &dockerRegistryUsername admin
+      password: &dockerRegistryPassword admin
+  sitesProviderName: &sitesProviderName sites-provider
+
+# apps config
+apps:
+  # php group config
+  php:
+    # app name
+    example:
+      # hostnames.
+      hostnames:
+        - "*.yes.local"
+      # basic auth config
+      basicAuth:
+        enabled: false
+        username: "yes"
+        password: "glasses!!"
+      # init replicas
+      replicas: 1
+      # update policy.
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 25%
+          maxSurge: 25%
+      # container image
+      image: php:8.3-fpm
+      # image pull policy
+      imagePullPolicy: IfNotPresent
+      # image pull secrets, auto inject.
+      imagePullSecrets:
+        # render secret.
+        enabled: false
+      # php app resources.
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+      # nginx ingress server snippet.
+      serverSnippet: |
+        if ($host ~ ^(?<subdomain>[^.]+)\.yes\.local$) {
+            set $subdomain $subdomain;
+        }
+      # php index script file.
+      # sites provider mounted /sites/
+      scriptFile: /sites/www.yesglasses.com/$subdomain/index.php
+      # nginx max upload body size.
+      bodyLimit: 32M
+      # restart policy.
+      restartPolicy: Always
+      mountSitesProviderName: *sitesProviderName
+      ingressClassName: *ingressClassName
+      # prometheus monitor service.
+      monitor:
+        enabled: *prometheusEnabled
+        exporter:
+          image: hipages/php-fpm_exporter:2.2
+          env:
+            - name: PHP_FPM_SCRAPE_URI
+              value: "tcp://127.0.0.1:9001/fpm_status"
+            - name: PHP_FPM_FIX_PROCESS_COUNT
+              value: "1"
+          # monitor port for prometheus
+          port: 9253
+          # exporter resource config.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 20m
+              memory: 32Mi
 
 # storageclass config
 storageclass:
@@ -82,13 +167,13 @@ repository:
   # docker registry config.
   docker:
     # enable docker registry
-    enable: true
+    enable: *dockerRegistryEnabled
     # enable ingress
     ingress: true
     # registry image
     image: registry:2.8.3
     # docker registry host name
-    host: registry.local
+    host: *dockerHostName
     # docker data volume storage class name
     storageClassName: aws-efs
     # volume mode.
@@ -99,8 +184,8 @@ repository:
     bodySize: 2048M
     # docker registry secret for users.
     users:
-      - username: admin
-        password: admin
+      - username: *dockerRegistryUsername
+        password: *dockerRegistryPassword
 
 # ingress config
 ingress:
@@ -133,7 +218,7 @@ ingress:
 
       # autoscaling:
       autoscaling:
-        enabled: false
+        enabled: true
         minReplicas: 1
         maxReplicas: 4
         targetCPUUtilizationPercentage: 50
@@ -143,7 +228,7 @@ ingress:
 sites-provider:
   # sites program collection pvc.
   pvc:
-    name: sites-provider
+    name: *sitesProviderName
     storageClassName: aws-efs
     accessMode: ReadWriteMany
     capacity: 10Gi
@@ -162,7 +247,10 @@ sites-provider:
 # elasticsearch config
 elasticsearch:
   elasticsearch:
-    enabled: false
+    # enable elasticsearch
+    enabled: true
+    # elasticsearch replicas
+    replicas: 1
 
 # log-collector config
 log-collector:

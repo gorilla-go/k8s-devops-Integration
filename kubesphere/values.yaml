@@ -1,8 +1,0 @@
-production_mode: local
-
-adminPassword: "Yesglasses123"
-
-defaultStorageClass: aws-ebs
-
-aws-load-balancer-controller:
-  enabled: false
