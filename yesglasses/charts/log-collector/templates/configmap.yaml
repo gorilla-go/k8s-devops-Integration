@@ -1,9 +1,9 @@
-{{- if .Values.enabled }}
+{{- if .Values.enabled -}}
 kind: ConfigMap
 apiVersion: v1
 metadata:
   name: fluent-bit-config
-  namespace: { { .Release.Namespace } }
+  namespace: {{ .Release.Namespace }}
   labels:
     com.yesglasses.configmap: fluent-bit-config
 data:
@@ -12,4 +12,4 @@ data:
 
   fluent-bit-parse.conf: |
     {{- .Values.parseConfig | nindent 4 }}
-{{- end }}
+{{- end -}}
