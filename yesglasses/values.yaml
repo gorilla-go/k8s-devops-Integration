@@ -62,8 +62,9 @@ apps:
           memory: 256Mi
       # nginx ingress server snippet.
       serverSnippet: |
-        if ($host ~ ^(?<subdomain>[^.]+)\.yes\.local$) {
-            set $subdomain $subdomain;
+        map $host $subdomain {
+            default $host;
+            ~^[^.]+\.yes\.local$ $1;
         }
       # php index script file.
       # sites provider mounted /sites/
