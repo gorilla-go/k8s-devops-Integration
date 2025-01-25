@@ -20,6 +20,7 @@ global:
       email: docker@yesglasses.com
       username: &dockerRegistryUsername admin
       password: &dockerRegistryPassword admin
+  # sites provider name
   sitesProviderName: &sitesProviderName sites-provider
 
 # apps config
@@ -260,6 +261,11 @@ mysql:
     metrics:
       enable: *prometheusEnabled
     mycnf: ""
+    credentials:
+      root:
+        user: root
+        password: root
+        host: "%"
 
 # prometheus config
 prometheus:
