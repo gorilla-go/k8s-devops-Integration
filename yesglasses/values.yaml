@@ -100,7 +100,7 @@ storageclass:
     enable: true
     # nfs server config
     nfs:
-      server: 10.0.29.250
+      server: 10.0.31.14
       path: /share
       mountOptions:
       volumeName: nfs-subdir-external-provisioner-root
