@@ -62,8 +62,8 @@ apps:
           memory: 256Mi
       # nginx ingress server snippet.
       serverSnippet: |
-        if ($host = "yes.local") {
-          rewrite ^ http://www.yes.local$request_uri permanent;
+        if ($subdomain = "") {
+          set $subdomain "www";
         }
       # php index script file.
       # sites provider mounted /sites/

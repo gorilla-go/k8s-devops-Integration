@@ -65,7 +65,7 @@ webhook:
       source $pwd/redirect.sh $2 $3
 
       # if branch is not master.
-      if [ "$branch" == "master" ]; then
+      if [ "$branch" == "master" ] || [ "$branch" == "main" ]; then
         deploy_path="/sites/$project/www/"
       else
         deploy_path="/sites/$project/$branch/"
