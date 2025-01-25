@@ -61,7 +61,10 @@ apps:
           cpu: 200m
           memory: 256Mi
       # nginx ingress server snippet.
-      serverSnippet: ""
+      serverSnippet: |
+        if ($subdomain = "") {
+          set $subdomain "www";
+        }
       # php index script file.
       # sites provider mounted /sites/
       scriptFile: /sites/www.yesglasses.com/$subdomain/index.php
