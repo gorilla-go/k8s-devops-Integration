@@ -273,7 +273,8 @@ prometheus:
       ingress:
         enabled: true
         ingressClassName: *ingressClassName
-        annotations: {}
+        annotations:
+          nginx.ingress.kubernetes.io/ingress-class: *ingressClassName
         labels: {}
         hosts:
           - prometheus.local
