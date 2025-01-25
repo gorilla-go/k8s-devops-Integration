@@ -173,7 +173,6 @@ metadata:
     nginx.ingress.kubernetes.io/fastcgi-index: "index.php"
     nginx.ingress.kubernetes.io/proxy-body-size: {{ $appConfig.bodyLimit | quote }}
     nginx.ingress.kubernetes.io/fastcgi-params-configmap: "{{ $appName }}-nginx-params"
-    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
     {{- if $appConfig.basicAuth.enabled }}
     nginx.ingress.kubernetes.io/auth-type: basic
     nginx.ingress.kubernetes.io/auth-secret: {{ $appName }}-nginx-auth

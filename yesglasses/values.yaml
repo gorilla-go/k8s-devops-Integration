@@ -61,7 +61,10 @@ apps:
           cpu: 200m
           memory: 256Mi
       # nginx ingress server snippet.
-      serverSnippet: ""
+      serverSnippet: |
+        if ($host = "yes.local") {
+          rewrite ^ http://www.yes.local$request_uri permanent;
+        }
       # php index script file.
       # sites provider mounted /sites/
       scriptFile: /sites/www.yesglasses.com/$subdomain/index.php
