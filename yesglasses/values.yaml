@@ -61,14 +61,10 @@ apps:
           cpu: 200m
           memory: 256Mi
       # nginx ingress server snippet.
-      serverSnippet: |
-        map $host $subdomain {
-            default $host;
-            ~^[^.]+\.yes\.local$ $1;
-        }
+      serverSnippet: ""
       # php index script file.
       # sites provider mounted /sites/
-      scriptFile: /sites/www.yesglasses.com/$subdomain/index.php
+      scriptFile: /sites/www.yesglasses.com/$1/index.php
       # nginx max upload body size.
       bodyLimit: 32M
       # restart policy.
