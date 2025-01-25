@@ -64,7 +64,7 @@ apps:
       serverSnippet: ""
       # php index script file.
       # sites provider mounted /sites/
-      scriptFile: /sites/www.yesglasses.com/$subdomain/index.php
+      scriptFile: /sites/www.yesglasses.com/${subdomain:-www}/index.php
       # nginx max upload body size.
       bodyLimit: 32M
       # restart policy.
